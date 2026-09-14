@@ -2,22 +2,32 @@
 
 The LibreWPF native MIL integration requires canonical LibreWinForms and LibreWPF
 to consume the same ProGPU source commit. The current alignment pins ProGPU
-`main` merge commit `62b67e6cf34addff2e2bdc7ef959a3c50694939a` for
-[ProGPU #161](https://github.com/wieslawsoltes/ProGPU/pull/161). Its exact PR
-head `5f945f8e1dea81077e08aa0481896f88ab1f1730` passed 45/45 checks,
-including the Windows ARM64 native renderer and all native package consumers,
-before the merge. The fix admits the packaged LibreWPF paid Xceed DataGrid's
-retained path set and a guideline-snapped zero-area fill; its local macOS native
-live gate passes with the proposed C++ runtime. The merged-commit ProGPU
-package and LibreWPF application gates remain separate requirements. This
-pin adds no WinForms-local graphics implementation and does not waive this
-repository's CI or canonical LibreWPF source-graph gate.
+`main` merge commit `5b99b640a583c9f1cb69fd17731e000ab632baec` for
+[ProGPU #162](https://github.com/wieslawsoltes/ProGPU/pull/162). Its exact PR
+head `58351f4c5c1077fb41bf3656a9058db0da24bb8a` passed 45/45 checks,
+including all native renderer platforms and package consumers, before the
+merge. The C++ MIL fix makes Retina glyph ink match WPF layout advances;
+the preceding ProGPU #161 path-atlas repair remains in this same main tree.
+The merged-commit ProGPU package and LibreWPF application gates remain
+separate requirements. This pin adds no WinForms-local graphics
+implementation and does not waive this repository's CI or canonical LibreWPF
+source-graph gate.
 
 The dependency is merged; consumer work remains in
 [LibreWPF #115](https://github.com/wieslawsoltes/LibreWPF/pull/115).
 Merge this alignment only after the new LibreWinForms pin's required CI is green.
 
 ## Earlier alignment checkpoints
+
+The preceding alignment pinned ProGPU `main` merge commit
+`62b67e6cf34addff2e2bdc7ef959a3c50694939a` for
+[ProGPU #161](https://github.com/wieslawsoltes/ProGPU/pull/161). Its exact PR
+head `5f945f8e1dea81077e08aa0481896f88ab1f1730` passed 45/45 checks,
+including the Windows ARM64 native renderer and all native package consumers,
+before the merge. The fix admits the packaged LibreWPF paid Xceed DataGrid's
+retained path set and a guideline-snapped zero-area fill; its local macOS
+native live gate passed with an isolated C++ runtime overlay. That evidence
+is historical for the new pin.
 
 The preceding alignment pinned ProGPU `main` merge commit
 `86f2f766d1f8e6b4041fa184de0fe9d03ae2840f` for
