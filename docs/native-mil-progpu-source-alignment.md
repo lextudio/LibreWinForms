@@ -2,22 +2,32 @@
 
 The LibreWPF native MIL integration requires canonical LibreWinForms and LibreWPF
 to consume the same ProGPU source commit. The current alignment pins ProGPU
-`main` merge commit `86f2f766d1f8e6b4041fa184de0fe9d03ae2840f` for
-[ProGPU #139](https://github.com/wieslawsoltes/ProGPU/pull/139). Its tree is
-identical to tested PR head `54adc6a005119d40fc25615b3823844c21453690`;
-exact-head Build [34819727963](https://github.com/wieslawsoltes/ProGPU/actions/runs/34819727963)
-completed 54/54 checks, including platform package consumers. Exact NuGet
-`0.1.0-preview.3051.ci` also passes the full local macOS Metal and Windows VM
-x64 system-WARP/default-adapter consumers without source assembly overlays.
-This does not add a WinForms-local graphics implementation or waive this
-repository's own CI, the canonical LibreWPF source-graph gate, or final WPF
-application/package qualification.
+`main` merge commit `62b67e6cf34addff2e2bdc7ef959a3c50694939a` for
+[ProGPU #161](https://github.com/wieslawsoltes/ProGPU/pull/161). Its exact PR
+head `5f945f8e1dea81077e08aa0481896f88ab1f1730` passed 45/45 checks,
+including the Windows ARM64 native renderer and all native package consumers,
+before the merge. The fix admits the packaged LibreWPF paid Xceed DataGrid's
+retained path set and a guideline-snapped zero-area fill; its local macOS native
+live gate passes with the proposed C++ runtime. The merged-commit ProGPU
+package and LibreWPF application gates remain separate requirements. This
+pin adds no WinForms-local graphics implementation and does not waive this
+repository's CI or canonical LibreWPF source-graph gate.
 
 The dependency is merged; consumer work remains in
 [LibreWPF #115](https://github.com/wieslawsoltes/LibreWPF/pull/115).
 Merge this alignment only after the new LibreWinForms pin's required CI is green.
 
 ## Earlier alignment checkpoints
+
+The preceding alignment pinned ProGPU `main` merge commit
+`86f2f766d1f8e6b4041fa184de0fe9d03ae2840f` for
+[ProGPU #139](https://github.com/wieslawsoltes/ProGPU/pull/139). Its tree is
+identical to tested PR head `54adc6a005119d40fc25615b3823844c21453690`;
+exact-head Build [34819727963](https://github.com/wieslawsoltes/ProGPU/actions/runs/34819727963)
+completed 54/54 checks, including platform package consumers. Exact NuGet
+`0.1.0-preview.3051.ci` also passed local macOS Metal and Windows VM x64
+system-WARP/default-adapter consumers without source assembly overlays. That
+evidence remains historical for the new pin.
 
 The earlier alignment pinned
 `586e52c7721f0957916159530a52e6d7e4ec1a3d`, the integration of ProGPU
