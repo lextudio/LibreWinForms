@@ -1,7 +1,16 @@
 # Native MIL ProGPU source alignment
 
 The LibreWPF native MIL integration requires canonical LibreWinForms and LibreWPF
-to consume the same ProGPU source commit. The current alignment pins ProGPU
+to consume the same ProGPU source commit. This branch pins
+`6e627310` from [ProGPU #164](https://github.com/wieslawsoltes/ProGPU/pull/164),
+matching the pending [LibreWPF #137](https://github.com/wieslawsoltes/LibreWPF/pull/137)
+consumer. The pin supplies typed first-show placement and native-position
+callbacks; it is a PR head, not a merged or runtime-qualified ProGPU release.
+All three PRs require their own exact-head CI before merge.
+
+## Earlier alignment checkpoints
+
+The preceding alignment pinned ProGPU
 `main` merge commit `5b99b640a583c9f1cb69fd17731e000ab632baec` for
 [ProGPU #162](https://github.com/wieslawsoltes/ProGPU/pull/162). Its exact PR
 head `58351f4c5c1077fb41bf3656a9058db0da24bb8a` passed 45/45 checks,
@@ -16,8 +25,6 @@ source-graph gate.
 The dependency is merged; consumer work remains in
 [LibreWPF #115](https://github.com/wieslawsoltes/LibreWPF/pull/115).
 Merge this alignment only after the new LibreWinForms pin's required CI is green.
-
-## Earlier alignment checkpoints
 
 The preceding alignment pinned ProGPU `main` merge commit
 `62b67e6cf34addff2e2bdc7ef959a3c50694939a` for
