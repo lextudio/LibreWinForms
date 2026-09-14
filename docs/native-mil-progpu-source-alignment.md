@@ -1,15 +1,28 @@
 # Native MIL ProGPU source alignment
 
 The LibreWPF native MIL integration requires canonical LibreWinForms and LibreWPF
-to consume the same ProGPU source commit. This change pins
-`586e52c7721f0957916159530a52e6d7e4ec1a3d`, the integration of ProGPU main #140
-with native MIL and its post-merge fixes. It does not add a WinForms-local graphics
-implementation or waive the exact source-graph gate.
+to consume the same ProGPU source commit. The current alignment pins ProGPU
+`main` merge commit `86f2f766d1f8e6b4041fa184de0fe9d03ae2840f` for
+[ProGPU #139](https://github.com/wieslawsoltes/ProGPU/pull/139). Its tree is
+identical to tested PR head `54adc6a005119d40fc25615b3823844c21453690`;
+exact-head Build [34819727963](https://github.com/wieslawsoltes/ProGPU/actions/runs/34819727963)
+completed 54/54 checks, including platform package consumers. Exact NuGet
+`0.1.0-preview.3051.ci` also passes the full local macOS Metal and Windows VM
+x64 system-WARP/default-adapter consumers without source assembly overlays.
+This does not add a WinForms-local graphics implementation or waive this
+repository's own CI, the canonical LibreWPF source-graph gate, or final WPF
+application/package qualification.
 
-The dependency remains under review in
-[ProGPU #139](https://github.com/wieslawsoltes/ProGPU/pull/139), with consumer work in
+The dependency is merged; consumer work remains in
 [LibreWPF #115](https://github.com/wieslawsoltes/LibreWPF/pull/115).
-Merge this alignment only after the ProGPU dependency and required CI are ready.
+Merge this alignment only after the new LibreWinForms pin's required CI is green.
+
+## Earlier alignment checkpoints
+
+The earlier alignment pinned
+`586e52c7721f0957916159530a52e6d7e4ec1a3d`, the integration of ProGPU
+main #140 with native MIL and its post-merge fixes. The following evidence is
+historical and does not qualify the current pin.
 
 The latest pin adds retained excluded-paragraph snapshots, shared C/managed
 fragment caret navigation and the explicit neutral exclusion formatting
