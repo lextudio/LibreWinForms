@@ -1530,6 +1530,19 @@ Five focused gates cover retained mesh shape/color/blend state, active transform
 
 The exact parent source-first gate passes native canonical Forms at 0 warnings/0 errors, ProGPU canonical Forms at the established 613 reviewed warnings/0 errors, platform tests 52/52, backend tests 52 successful with two expected real-AppKit/real-Wayland opt-in skips, lifecycle tests 130/130, drawing tests 612/612, ApiCompat 0/0/13, and the retired-Portable ledger at 26 covered with no migration or retirement debt. The isolated package gate also passes for the exact pin: all ten ProGPU drawing packages and symbol packages are verified, fresh-cache direct, SDK project-mode, and SDK package-mode consumers build and run, and the compatibility-runtime and `LocalArtifacts` negative selections remain rejected. The record inventory advances to 150 handled of 192 enum-backed kinds, leaving 42 explicit unsupported entries. Coordinated source-development mode advances only the ProGPU gitlink; ordinary immutable NuGet mode remains available, PR #140 remains the single ProGPU delivery branch, and `src/LibreWinForms.Portable` remains absent and forbidden.
 
+### ProGPU desktop-pointer dependency checkpoint
+
+The coordinated source-development graph advances its exact ProGPU pin to
+`0b50e18c12cbb6a9f45d971e7f7acd244d565fd7`. That dependency adds the typed
+Win32, Cocoa, and X11 global desktop-pointer provider consumed by LibreWPF's
+unowned `WindowStartupLocation.CenterScreen` path and explicitly reports the
+Wayland capability as unavailable. LibreWinForms adds no substitute API or
+behavior in this checkpoint; the synchronized pin keeps the shared canonical
+ProGPU graph coherent for LibreWPF integration. The ProGPU provider fixture
+passes 8/8 and its backend/test graphs compile with zero warnings and errors.
+Multi-monitor platform qualification remains part of the coordinated final
+application phase.
+
 ## Major risks and controls
 
 ### ProGPU arbitrary-pattern and package-closure checkpoint
