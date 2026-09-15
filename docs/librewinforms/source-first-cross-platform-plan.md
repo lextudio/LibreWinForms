@@ -1533,6 +1533,7 @@ The exact parent source-first gate passes native canonical Forms at 0 warnings/0
 ### ProGPU desktop-pointer dependency checkpoint
 
 The coordinated source-development graph advances its exact ProGPU pin to
+merge `21c60978539ca7893f04491249f08ad11141e475`, retaining provider commit
 `0b50e18c12cbb6a9f45d971e7f7acd244d565fd7`. That dependency adds the typed
 Win32, Cocoa, and X11 global desktop-pointer provider consumed by LibreWPF's
 unowned `WindowStartupLocation.CenterScreen` path and explicitly reports the
