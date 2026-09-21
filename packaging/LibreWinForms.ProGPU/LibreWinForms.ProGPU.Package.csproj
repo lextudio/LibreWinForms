@@ -20,6 +20,7 @@
     <LibreWinFormsProGpuProject>$(RepoRoot)src/LibreWinForms.ProGPU/LibreWinForms.ProGPU.csproj</LibreWinFormsProGpuProject>
     <LibreWinFormsProGpuOutput>$(ArtifactsDir)bin/LibreWinForms.ProGPU/$(Configuration)/$(TargetFramework)/</LibreWinFormsProGpuOutput>
     <LibreWinFormsProGpuObject>$(ArtifactsDir)obj/LibreWinForms.ProGPU/$(Configuration)/$(TargetFramework)/</LibreWinFormsProGpuObject>
+    <LibreWinFormsPlatformObject>$(ArtifactsDir)obj/LibreWinForms.Platform/$(Configuration)/$(TargetFramework)/</LibreWinFormsPlatformObject>
     <_LibreWinFormsDotNet>$(RepoRoot)eng/common/dotnet.sh</_LibreWinFormsDotNet>
   </PropertyGroup>
 
@@ -43,11 +44,17 @@
            Text="The source-built LibreWinForms.ProGPU runtime payload was not produced." />
     <Error Condition="!Exists('$(LibreWinFormsProGpuObject)ref/LibreWinForms.ProGPU.dll')"
            Text="The source-built LibreWinForms.ProGPU reference assembly was not produced." />
+        <Error Condition="!Exists('$(LibreWinFormsProGpuOutput)LibreWinForms.Platform.dll')"
+          Text="The source-built LibreWinForms.Platform runtime payload was not produced." />
+        <Error Condition="!Exists('$(LibreWinFormsPlatformObject)ref/LibreWinForms.Platform.dll')"
+          Text="The source-built LibreWinForms.Platform reference assembly was not produced." />
 
     <ItemGroup>
       <_LibreWinFormsProGpuRuntimeFile Include="$(LibreWinFormsProGpuOutput)LibreWinForms.ProGPU.dll;
-                                                $(LibreWinFormsProGpuOutput)LibreWinForms.ProGPU.xml" />
-      <_LibreWinFormsProGpuReferenceFile Include="$(LibreWinFormsProGpuObject)ref/LibreWinForms.ProGPU.dll" />
+                      $(LibreWinFormsProGpuOutput)LibreWinForms.ProGPU.xml;
+                      $(LibreWinFormsProGpuOutput)LibreWinForms.Platform.dll" />
+          <_LibreWinFormsProGpuReferenceFile Include="$(LibreWinFormsProGpuObject)ref/LibreWinForms.ProGPU.dll;
+                   $(LibreWinFormsPlatformObject)ref/LibreWinForms.Platform.dll" />
       <TfmSpecificPackageFile Include="@(_LibreWinFormsProGpuRuntimeFile)">
         <PackagePath>lib/$(TargetFramework)/%(_LibreWinFormsProGpuRuntimeFile.FileName)%(_LibreWinFormsProGpuRuntimeFile.Extension)</PackagePath>
       </TfmSpecificPackageFile>
