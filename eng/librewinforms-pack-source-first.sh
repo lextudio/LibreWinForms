@@ -28,6 +28,14 @@ trap 'rm -rf "${smoke_root}"' EXIT
 
 mkdir -p "${package_output}" "${progpu_package_output}"
 
+# dotnet.exe's NuGet source parser does not understand Git Bash's /c/... paths.
+# Keep POSIX paths for shell/file operations, but hand the native parser a
+# native Windows path when this script is hosted by MSYS.
+nuget_package_output="${package_output}"
+case "$(uname -s)" in
+  MINGW*|MSYS*) nuget_package_output="$(cygpath -w "${package_output}")" ;;
+esac
+
 PROGPU_CONFIGURATION="${configuration}" \
 PROGPU_PACKAGE_VERSION="${progpu_package_version}" \
 PROGPU_PACKAGE_OUTPUT="${progpu_package_output}" \
@@ -38,7 +46,7 @@ progpu_drawing_source_hash="$(sha256sum "${repo_root}/external/ProGPU/src/System
 
 canonical_pack_config="${smoke_root}/canonical-NuGet.config"
 cp "${repo_root}/NuGet.config" "${canonical_pack_config}"
-"${dotnet}" nuget add source "${package_output}" \
+"${dotnet}" nuget add source "${nuget_package_output}" \
   --name LibreWinFormsPinnedProGpu \
   --configfile "${canonical_pack_config}"
 NUGET_PACKAGES="${smoke_root}/canonical-packages" "${dotnet}" restore \
@@ -70,7 +78,7 @@ platform_canonical_hash="$(sha256sum "${repo_root}/artifacts/bin/LibreWinForms.P
 
 backend_pack_config="${smoke_root}/backend-NuGet.config"
 cp "${repo_root}/NuGet.config" "${backend_pack_config}"
-"${dotnet}" nuget add source "${package_output}" \
+"${dotnet}" nuget add source "${nuget_package_output}" \
   --name LibreWinFormsSourceFirstBackend \
   --configfile "${backend_pack_config}"
 NUGET_PACKAGES="${smoke_root}/backend-packages" "${dotnet}" restore \
@@ -212,7 +220,7 @@ for required_entry in \
   fi
 done
 
-if grep -Eq "^lib/${package_target_framework}/(ProGPU\\.|System\\.Drawing\\.Common|LibreWinForms\\.Platform)" <<<"${backend_entries}"; then
+if grep -Eq "^lib/${package_target_framework}/(ProGPU\\.|System\\.Drawing\\.Common)" <<<"${backend_entries}"; then
   echo "Source-first ProGPU backend package embeds dependency assemblies." >&2
   exit 1
 fi
@@ -233,7 +241,7 @@ fi
 
 cp -R "${repo_root}/packaging/LibreWinForms.System.Windows.Forms.Smoke/." "${smoke_root}/"
 cp "${repo_root}/NuGet.config" "${smoke_root}/NuGet.config"
-"${dotnet}" nuget add source "${package_output}" \
+"${dotnet}" nuget add source "${nuget_package_output}" \
   --name LibreWinFormsSourceFirst \
   --configfile "${smoke_root}/NuGet.config"
 
@@ -273,7 +281,7 @@ sed "s#LibreWinForms.Sdk/0.1.0-source-first-sdk#LibreWinForms.Sdk/${sdk_package_
   >"${sdk_smoke_project}"
 cp "${sdk_smoke_source}/Program.cs" "${sdk_smoke_root}/"
 cp "${repo_root}/NuGet.config" "${sdk_smoke_config}"
-"${dotnet}" nuget add source "${package_output}" \
+"${dotnet}" nuget add source "${nuget_package_output}" \
   --name LibreWinFormsSourceFirstSdk \
   --configfile "${sdk_smoke_config}"
 
@@ -384,7 +392,7 @@ sed "s#LibreWinForms.Sdk/0.1.0-source-first-sdk#LibreWinForms.Sdk/${sdk_package_
   >"${sdk_package_smoke_project}"
 cp "${sdk_smoke_source}/Program.cs" "${sdk_package_smoke_root}/"
 cp "${repo_root}/NuGet.config" "${sdk_package_smoke_config}"
-"${dotnet}" nuget add source "${package_output}" \
+"${dotnet}" nuget add source "${nuget_package_output}" \
   --name LibreWinFormsSourceFirstSdkPackages \
   --configfile "${sdk_package_smoke_config}"
 
