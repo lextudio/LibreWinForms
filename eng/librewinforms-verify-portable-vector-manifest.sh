@@ -5,7 +5,6 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 manifest="${repo_root}/eng/librewinforms-portable-vector-manifest.tsv"
 retired_roots=(
   "packaging/LibreWinForms.Sdk.CompatibilitySmoke"
-  "src/LibreWinForms.Portable"
   "src/test/compatibility/LibreWinForms.Portable.Tests"
 )
 

@@ -135,7 +135,10 @@ function InitializeDotNetCli {
 
   # Use dotnet installation specified in DOTNET_INSTALL_DIR if it contains the required SDK version,
   # otherwise install the dotnet CLI and SDK to repo local .dotnet directory to avoid potential permission issues.
-  if [[ $global_json_has_runtimes == false && -n "${DOTNET_INSTALL_DIR:-}" && -d "$DOTNET_INSTALL_DIR/sdk/$dotnet_sdk_version" ]]; then
+  # Windows local-feed builds may intentionally supply LibreWPF's newer
+  # private preview SDK. Let dotnet's global.json roll-forward policy choose
+  # it rather than attempting an unsupported Git-Bash SDK installation.
+  if [[ -n "${DOTNET_INSTALL_DIR:-}" && ( -f "$DOTNET_INSTALL_DIR/dotnet" || -f "$DOTNET_INSTALL_DIR/dotnet.exe" ) ]]; then
     dotnet_root="$DOTNET_INSTALL_DIR"
   else
     if [[ -n "${DOTNET_GLOBAL_INSTALL_DIR:-}" ]]; then
