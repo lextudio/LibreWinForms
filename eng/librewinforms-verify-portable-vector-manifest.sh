@@ -64,7 +64,8 @@ line_number=1
 covered=0
 migrate=0
 retire=0
-declare -A seen_sources=()
+# A newline-delimited list keeps this script usable with macOS bash 3.2 (no associative arrays).
+seen_sources=$'\n'
 while IFS=$'\t' read -r source disposition owner rationale extra; do
   line_number=$((line_number + 1))
   if [[ -z "${source}" || -z "${disposition}" || -z "${owner}" || -z "${rationale}" || -n "${extra:-}" ]]; then
@@ -75,11 +76,11 @@ while IFS=$'\t' read -r source disposition owner rationale extra; do
     echo "Portable vector manifest row ${line_number} has unexpected vector name ${source}." >&2
     exit 1
   fi
-  if [[ -n "${seen_sources[${source}]:-}" ]]; then
+  if [[ "${seen_sources}" == *$'\n'"${source}"$'\n'* ]]; then
     echo "Portable vector manifest duplicates ${source}." >&2
     exit 1
   fi
-  seen_sources["${source}"]=1
+  seen_sources+="${source}"$'\n'
   if [[ ! -e "${repo_root}/${owner}" ]]; then
     echo "Portable vector manifest row ${line_number} names missing canonical owner ${owner}." >&2
     exit 1
