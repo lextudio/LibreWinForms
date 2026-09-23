@@ -20,7 +20,12 @@
     <LibreWinFormsProGpuProject>$(RepoRoot)src/LibreWinForms.ProGPU/LibreWinForms.ProGPU.csproj</LibreWinFormsProGpuProject>
     <LibreWinFormsProGpuOutput>$(ArtifactsDir)bin/LibreWinForms.ProGPU/$(Configuration)/$(TargetFramework)/</LibreWinFormsProGpuOutput>
     <LibreWinFormsProGpuObject>$(ArtifactsDir)obj/LibreWinForms.ProGPU/$(Configuration)/$(TargetFramework)/</LibreWinFormsProGpuObject>
-    <_LibreWinFormsDotNet>$(RepoRoot)eng/common/dotnet.sh</_LibreWinFormsDotNet>
+    <!-- Exec runs through cmd.exe on Windows, which hands a .sh file to its file association
+         (git-bash.exe, in a new window) and reports success without building anything.  Reuse
+         the dotnet host running this build instead: eng/common/dotnet.cmd would demand the exact
+         global.json tools.dotnet version and try to install it. -->
+    <_LibreWinFormsDotNet Condition="'$(OS)' == 'Windows_NT'">$(DOTNET_HOST_PATH)</_LibreWinFormsDotNet>
+    <_LibreWinFormsDotNet Condition="'$(OS)' != 'Windows_NT'">$(RepoRoot)eng/common/dotnet.sh</_LibreWinFormsDotNet>
   </PropertyGroup>
 
   <ItemGroup>
