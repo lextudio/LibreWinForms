@@ -372,6 +372,10 @@ public partial class TabControl : Control
                 return _cachedDisplayRect;
             }
 
+#if LIBREWINFORMS_PORTABLE
+            _cachedDisplayRect = GetPortableDisplayRectangle();
+            return _cachedDisplayRect;
+#else
             RECT rect = Bounds;
 
             // We force a handle creation here, because otherwise the DisplayRectangle will be wildly inaccurate
@@ -401,6 +405,7 @@ public partial class TabControl : Control
 
             _cachedDisplayRect = r;
             return r;
+#endif
         }
     }
 
@@ -480,11 +485,16 @@ public partial class TabControl : Control
                 }
 
                 _imageList = value;
+#if LIBREWINFORMS_PORTABLE
+                _cachedDisplayRect = Rectangle.Empty;
+                Invalidate();
+#else
                 IntPtr handle = (value is not null) ? value.Handle : IntPtr.Zero;
                 if (IsHandleCreated)
                 {
                     PInvokeCore.SendMessage(this, PInvoke.TCM_SETIMAGELIST, 0, handle);
                 }
+#endif
 
                 // Update the image list in the tab pages.
                 foreach (TabPage tabPage in TabPages)
@@ -653,7 +663,12 @@ public partial class TabControl : Control
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     [SRDescription(nameof(SR.TabBaseRowCountDescr))]
     public int RowCount
+#if LIBREWINFORMS_PORTABLE
+        // The portable layout is always a single row of headers.
+        => TabCount > 0 ? 1 : 0;
+#else
         => (int)PInvokeCore.SendMessage(this, PInvoke.TCM_GETROWCOUNT);
+#endif
 
     /// <summary>
     ///  The index of the currently selected tab in the strip, if there
@@ -667,7 +682,12 @@ public partial class TabControl : Control
     [SRDescription(nameof(SR.selectedIndexDescr))]
     public int SelectedIndex
     {
+#if LIBREWINFORMS_PORTABLE
+        // No comctl32 control holds the selection: the managed field is authoritative.
+        get => _selectedIndex;
+#else
         get => IsHandleCreated ? (int)PInvokeCore.SendMessage(this, PInvoke.TCM_GETCURSEL) : _selectedIndex;
+#endif
         set
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(value, -1);
@@ -695,7 +715,11 @@ public partial class TabControl : Control
                         }
                     }
 
+#if LIBREWINFORMS_PORTABLE
+                    _selectedIndex = value;
+#else
                     PInvokeCore.SendMessage(this, PInvoke.TCM_SETCURSEL, (WPARAM)value);
+#endif
 
                     if (!GetState(State.FromCreateHandles) && !GetState(State.SelectFirstControl))
                     {
@@ -938,17 +962,35 @@ public partial class TabControl : Control
 
     private int AddNativeTabPage(TabPage tabPage)
     {
+#if LIBREWINFORMS_PORTABLE
+        // There is no native item to insert; the header is laid out from _tabPages. Relayout
+        // straight away instead of posting TabBaseReLayout to a USER32 queue.
+        // AddTabPage calls this before the page joins _tabPages (it is appended there next);
+        // OnHandleCreated calls it for pages already registered.
+        int index = _tabPages.IndexOf(tabPage);
+        if (index < 0)
+        {
+            index = TabCount;
+        }
+
+        SelectPortableFirstInsertedTab(index);
+        WmTabBaseReLayout();
+        return index;
+#else
         int index = SendMessage(PInvoke.TCM_INSERTITEMW, TabCount + 1, tabPage);
         PInvokeCore.PostMessage(this, _tabBaseReLayoutMessage);
         return index;
+#endif
     }
 
     internal void ApplyItemSize()
     {
+#if !LIBREWINFORMS_PORTABLE
         if (IsHandleCreated && ShouldSerializeItemSize())
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_SETITEMSIZE, 0, PARAM.FromLowHigh(_itemSize.Width, _itemSize.Height));
         }
+#endif
 
         _cachedDisplayRect = Rectangle.Empty;
     }
@@ -1116,6 +1158,10 @@ public partial class TabControl : Control
         SetState(State.GetTabRectfromItemSize, false);
         RECT rect = default;
 
+#if LIBREWINFORMS_PORTABLE
+        rect = GetPortableTabRect(index);
+        return rect;
+#else
         // normally, we would not want to create the handle for this, but since
         // it is dependent on the actual physical display, we simply must.
         if (!IsHandleCreated)
@@ -1125,6 +1171,7 @@ public partial class TabControl : Control
 
         PInvokeCore.SendMessage(this, PInvoke.TCM_GETITEMRECT, (WPARAM)index, ref rect);
         return rect;
+#endif
     }
 
     protected string GetToolTipText(object item)
@@ -1141,10 +1188,14 @@ public partial class TabControl : Control
 
     private void ImageListRecreateHandle(object? sender, EventArgs e)
     {
+#if LIBREWINFORMS_PORTABLE
+        Invalidate();
+#else
         if (IsHandleCreated)
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_SETIMAGELIST, 0, ImageList!.Handle);
         }
+#endif
     }
 
     internal void Insert(int index, TabPage tabPage)
@@ -1168,7 +1219,11 @@ public partial class TabControl : Control
         ArgumentOutOfRangeException.ThrowIfGreaterThan(index, TabCount);
         ArgumentNullException.ThrowIfNull(tabPage);
 
+#if LIBREWINFORMS_PORTABLE
+        SelectPortableFirstInsertedTab(index);
+#else
         index = IsHandleCreated ? SendMessage(PInvoke.TCM_INSERTITEMW, index, tabPage) : index;
+#endif
         if (index >= 0)
         {
             Insert(index, tabPage);
@@ -1240,15 +1295,18 @@ public partial class TabControl : Control
         // Set the padding BEFORE setting the control's font (as done
         // in base.OnHandleCreated()) so that the tab control will honor both the
         // horizontal and vertical dimensions of the padding rectangle.
+#if !LIBREWINFORMS_PORTABLE
         if (!_padding.IsEmpty)
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_SETPADDING, 0, PARAM.FromPoint(_padding));
         }
+#endif
 
         base.OnHandleCreated(e);
         _cachedDisplayRect = Rectangle.Empty;
         ApplyItemSize();
 
+#if !LIBREWINFORMS_PORTABLE
         if (_imageList is not null)
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_SETIMAGELIST, 0, _imageList.Handle);
@@ -1266,6 +1324,7 @@ public partial class TabControl : Control
                     SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE);
             }
         }
+#endif
 
         // Add the pages
         //
@@ -1278,6 +1337,15 @@ public partial class TabControl : Control
         //
         ResizePages();
 
+#if LIBREWINFORMS_PORTABLE
+        // _selectedIndex stays the selection after handle creation (there is no comctl32 control to
+        // hand it to), so it must not be reset to -1 here. comctl32 selects the first tab of a
+        // non-empty control that has none selected.
+        if (_selectedIndex == -1 && TabCount > 0)
+        {
+            _selectedIndex = 0;
+        }
+#else
         if (_selectedIndex != -1)
         {
             try
@@ -1292,6 +1360,7 @@ public partial class TabControl : Control
 
             _selectedIndex = -1;
         }
+#endif
 
         UpdateTabSelection(false);
         ApplyDarkModeOnDemand();
@@ -1300,11 +1369,14 @@ public partial class TabControl : Control
     private void ApplyDarkModeOnDemand()
     {
         // We need to avoid to apply the DarkMode theme twice on handle recreate.
+#if !LIBREWINFORMS_PORTABLE
+        // Portable backends theme the control through their own renderer, not comctl32 themes.
         if (!_suspendDarkModeChange && Application.IsDarkModeEnabled)
         {
             PInvoke.SetWindowTheme(HWND, null, $"{DarkModeIdentifier}::{BannerContainerThemeIdentifier}");
             PInvokeCore.EnumChildWindows(this, StyleChildren);
         }
+#endif
 
         _suspendDarkModeChange = false;
     }
@@ -1557,10 +1629,12 @@ public partial class TabControl : Control
         // We don't actually want to remove the windows forms TabPages - we only
         // want to remove the corresponding TCITEM structs.
         // So, no RemoveAll()
+#if !LIBREWINFORMS_PORTABLE
         if (IsHandleCreated)
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_DELETEALLITEMS);
         }
+#endif
 
         _tabPages.Clear();
 
@@ -1592,10 +1666,12 @@ public partial class TabControl : Control
     {
         Controls.Clear();
 
+#if !LIBREWINFORMS_PORTABLE
         if (IsHandleCreated)
         {
             PInvokeCore.SendMessage(this, (PInvoke.TCM_DELETEALLITEMS));
         }
+#endif
 
         _tabPages.Clear();
     }
@@ -1610,10 +1686,20 @@ public partial class TabControl : Control
             _tabPages.RemoveAt(index);
         }
 
+#if LIBREWINFORMS_PORTABLE
+        // Keep the managed selection pointing at a page that still exists, as comctl32 does.
+        if (_selectedIndex >= TabCount)
+        {
+            _selectedIndex = TabCount - 1;
+        }
+
+        Invalidate();
+#else
         if (IsHandleCreated)
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_DELETEITEM, (WPARAM)index);
         }
+#endif
 
         _cachedDisplayRect = Rectangle.Empty;
     }
@@ -1648,7 +1734,9 @@ public partial class TabControl : Control
             return;
         }
 
+#if !LIBREWINFORMS_PORTABLE
         PInvokeCore.SendMessage(this, PInvoke.TCM_SETTOOLTIPS, (WPARAM)toolTip.Handle);
+#endif
         GC.KeepAlive(toolTip);
         _controlTipText = toolTip.GetToolTip(this);
     }
@@ -1659,6 +1747,15 @@ public partial class TabControl : Control
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, TabCount);
         ArgumentNullException.ThrowIfNull(value);
 
+#if LIBREWINFORMS_PORTABLE
+        // Make the Updated tab page the currently selected tab page
+        if (DesignMode && IsHandleCreated)
+        {
+            _selectedIndex = index;
+        }
+
+        Invalidate();
+#else
         if (IsHandleCreated)
         {
             SendMessage(PInvoke.TCM_SETITEMW, index, value);
@@ -1669,6 +1766,7 @@ public partial class TabControl : Control
         {
             PInvokeCore.SendMessage(this, PInvoke.TCM_SETCURSEL, (WPARAM)index);
         }
+#endif
 
         _tabPages[index] = value;
     }
@@ -1800,8 +1898,10 @@ public partial class TabControl : Control
             return true;
         }
 
+#if !LIBREWINFORMS_PORTABLE
         HRESULT hr = PInvoke.SetWindowTheme(handle, $"{DarkModeIdentifier}_{ExplorerThemeIdentifier}", null);
         Debug.Assert(hr.Succeeded);
+#endif
         return true;
     }
 
@@ -2006,7 +2106,11 @@ public partial class TabControl : Control
         else
         {
             // user Cancelled the Selection of the new Tab.
+#if LIBREWINFORMS_PORTABLE
+            _selectedIndex = _lastSelection;
+#else
             PInvokeCore.SendMessage(this, PInvoke.TCM_SETCURSEL, (WPARAM)_lastSelection);
+#endif
             UpdateTabSelection(true);
         }
 
@@ -2051,6 +2155,7 @@ public partial class TabControl : Control
         EndUpdate();
         Invalidate(true);
 
+#if !LIBREWINFORMS_PORTABLE
         // Remove other TabBaseReLayout messages from the message queue
         MSG msg = default;
         while (PInvokeCore.PeekMessage(
@@ -2061,6 +2166,7 @@ public partial class TabControl : Control
             PEEK_MESSAGE_REMOVE_TYPE.PM_REMOVE))
         {
         }
+#endif
     }
 
     /// <summary>

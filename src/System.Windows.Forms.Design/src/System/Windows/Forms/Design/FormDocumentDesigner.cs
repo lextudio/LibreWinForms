@@ -397,8 +397,14 @@ internal class FormDocumentDesigner : DocumentDesigner
         // Paint the form's title bar UI-active
         if (Control is { } control && control.IsHandleCreated)
         {
+#if LIBREWINFORMS_PORTABLE
+            // Portable backends draw the designed form's frame themselves; a synthetic handle
+            // has no USER32 window to activate. Repaint it in its new state instead.
+            control.Invalidate(true);
+#else
             PInvokeCore.SendMessage(control, PInvokeCore.WM_NCACTIVATE, (WPARAM)(BOOL)true);
             PInvoke.RedrawWindow(control, lprcUpdate: null, HRGN.Null, REDRAW_WINDOW_FLAGS.RDW_FRAME);
+#endif
         }
     }
 
@@ -409,8 +415,14 @@ internal class FormDocumentDesigner : DocumentDesigner
     {
         if (Control is { } control && control.IsHandleCreated)
         {
+#if LIBREWINFORMS_PORTABLE
+            // Portable backends draw the designed form's frame themselves; a synthetic handle
+            // has no USER32 window to activate. Repaint it in its new state instead.
+            control.Invalidate(true);
+#else
             PInvokeCore.SendMessage(control, PInvokeCore.WM_NCACTIVATE, (WPARAM)(BOOL)false);
             PInvoke.RedrawWindow(control, lprcUpdate: null, HRGN.Null, REDRAW_WINDOW_FLAGS.RDW_FRAME);
+#endif
         }
     }
 
