@@ -46,6 +46,11 @@ WinForms reference is prepared under `artifacts/dropdown-keyboard/grid-focus-ref
 but has not been built or run by the author.
 
 Only the two passing observer-free cases are admitted to source CI (minimum
-392). Their outcomes were proven in both retained runs above. The final reduced
-392-case selection has not been rerun while the coordinated Windows workload
-owns the heavy validation slot; no failed test or native outcome is relabeled.
+392). Their outcomes were proven in both retained runs above. The final selection
+then passed 392/392, zero skips, on macOS ARM64 / .NET 10.0.5 in 1.583 seconds.
+The warm test-only compile completed with zero warnings/errors in 4.02 seconds,
+against unchanged source-built product outputs from `8358eb96a` and the existing
+ProGPU `08f4343ef` closure; no dependency graph rebuild was needed. Exact results
+are retained in `grid-enter-final-build.log` and `grid-enter-final-tests.log`
+under `artifacts/dropdown-keyboard/log`. No failed test or native outcome is
+relabeled by this passing source gate.
