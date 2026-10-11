@@ -43,6 +43,10 @@ class CanonicalNativeStagingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ProGPU.Backend.Native"):
             verify_drawing_source_closure([p for p in drawing_package_ids() if p != "ProGPU.Backend.Native"])
 
+    def test_omitting_native_sdk_dependency_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "ProGPU.Native.Sdk"):
+            verify_drawing_source_closure([p for p in drawing_package_ids() if p != "ProGPU.Native.Sdk"])
+
     def test_omitting_dawn_dependency_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "ProGPU.Backend.Dawn"):
             verify_drawing_source_closure([p for p in drawing_package_ids() if p != "ProGPU.Backend.Dawn"])
@@ -112,7 +116,7 @@ class ReleaseNativeStagingTests(CanonicalNativeStagingTests):
 
 
 class SourceFirstNativeStagingTests(unittest.TestCase):
-    helper_commit = "d8a3a153bfd3d180023d119001e94da50c2eeca1"
+    helper_commit = "caf3077d54cccbea5f0c5b09ece69087b80aee3a"
 
     def staging_step(self):
         workflow = (ROOT / ".github/workflows/librewinforms-ci.yml").read_text()

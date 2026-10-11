@@ -6,7 +6,7 @@ on:
       version:
         description: NuGet package version to build.
         required: true
-        default: 0.1.0-preview.65
+        default: 0.1.0-preview.67
       bridge_version:
         description: LibreWPF bridge package version to build against. Defaults to version.
         required: false
@@ -165,6 +165,9 @@ jobs:
           set -euo pipefail
           export LIBREWINFORMS_BRIDGE_PACKAGE_OUTPUT="${GITHUB_WORKSPACE}/artifacts/checkouts/wpf-bridge/artifacts/packages/Release/NonShipping"
           ./eng/librewinforms-package-smoke.sh
+
+      - name: Validate complete NuGet upload size inventory
+        run: python3 external/ProGPU/eng/progpu-verify-package-sizes.py artifacts/packages/Release/NonShipping
 
       - name: Upload preview packages
         uses: actions/upload-artifact@v4

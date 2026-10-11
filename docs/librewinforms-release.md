@@ -23,8 +23,8 @@ from the pinned submodule, including `ProGPU.Backend.Dawn` and
 and runtime source before packing LibreWinForms:
 
 ```bash
-LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.65 \
-LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.65 \
+LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.67 \
+LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.67 \
 LIBREWINFORMS_CANONICAL_WFI_SOURCE_ROOT=/path/to/LibreWPF \
 LIBREWINFORMS_CANONICAL_WFI_EXPECTED_COMMIT=<librewpf-commit> \
 ./eng/librewinforms-build-canonical-wfi.sh
@@ -39,8 +39,8 @@ NuGet-based; this source handoff is a release qualification path.
 Pack the release from a separate canonical-WFI output directory:
 
 ```bash
-LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.65 \
-LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.65 \
+LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.67 \
+LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.67 \
 LIBREWINFORMS_CANONICAL_WFI_PACKAGE_SOURCE=/path/to/LibreWPF/artifacts/packages/CanonicalWinForms \
 LIBREWINFORMS_CANONICAL_WFI_COMMIT=<librewpf-commit> \
 ./eng/librewinforms-pack.sh
@@ -134,3 +134,9 @@ the packages, manifest, bundle, checksum, README, and `NuGet.config`.
 The active release branch is `librewinforms-progpu-port`; use
 `librewinforms-v<version>` tags for public previews only after canonical WFI and
 SharpDevelop qualification pass against the exact package closure.
+
+The coordinated preview.67 native closure includes `ProGPU.Native.Sdk` alongside
+`ProGPU.Backend.Native`. Keep their exact package versions and original static
+archives, private dependency receipts, and notices together in the feed. The
+release checks every package size before uploading any package; preview.66
+stopped during ProGPU publication and its partial published history is retained.

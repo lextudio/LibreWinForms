@@ -29,15 +29,17 @@ LibreWinForms is packaged as an MSBuild SDK so normal WinForms apps can move to 
 `LibreWinForms.Sdk` supplies canonical source-built WinForms plus the typed ProGPU/Silk.NET backend. Package mode is the default; its current Forms/backend payload targets `net10.0`. Project mode explicitly builds the source graph for the consumer's selected TFM instead of inheriting the repository's .NET 11 default. See [SDK framework policy](docs/sdk-runtime-framework.md).
 
 The net10 SDK-admission correction requires a new SDK package containing this
-source change. Previously published packages with the net11-only guard remain
-immutable; the preview.65 version examples below do not patch those packages.
+source change in the coordinated preview.67 release. Previously published
+packages with the net11-only guard remain immutable. Preview.66 stopped during
+ProGPU publication; preview.67 consumes its split native runtime and static SDK
+packages at one exact version.
 
 3. Set the LibreWinForms SDK version once in a `global.json` at the solution root (above all projects that use it):
 
 ```json
 {
   "msbuild-sdks": {
-    "LibreWinForms.Sdk": "0.1.0-preview.65"
+    "LibreWinForms.Sdk": "0.1.0-preview.67"
   }
 }
 ```
@@ -162,7 +164,7 @@ IME composition, undo, full navigation and visible sample qualification remain
 separate from these headless input contracts.
 
 ```bash
-LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.65 ./eng/librewinforms-pack.sh
+LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.67 ./eng/librewinforms-pack.sh
 ```
 
 The package lane builds canonical `LibreWinForms.System.Windows.Forms`, `LibreWinForms.ProGPU`, `LibreWinForms.Sdk`, and the exact ten-package ProGPU drawing closure. It consumes only a separately qualified canonical WFI source package plus its `LibreWPF.Interop` and `ProGPU.DirectX` source-built dependencies, verifies exact source/dependency provenance and the generated Forms contract, verifies docs, writes the preview manifest, creates a release bundle with hashes and a local-feed `NuGet.config`, and fails if a stale or unexpected current-version package would be published.
@@ -172,14 +174,14 @@ The pack script restores through an isolated cache under `artifacts/nuget/librew
 Build canonical WFI from a LibreWPF checkout first, then pass the qualified source output and exact LibreWPF commit to the package lane. A matching LibreWPF SDK feed is used only by the mixed-desktop package smoke:
 
 ```bash
-LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.65 \
-LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.65 \
+LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.67 \
+LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.67 \
 LIBREWINFORMS_CANONICAL_WFI_SOURCE_ROOT=/path/to/LibreWPF \
 LIBREWINFORMS_CANONICAL_WFI_EXPECTED_COMMIT=<librewpf-commit> \
 ./eng/librewinforms-build-canonical-wfi.sh
 
-LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.65 \
-LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.65 \
+LIBREWINFORMS_DEV_PACKAGE_VERSION=0.1.0-preview.67 \
+LIBREWINFORMS_PROGPU_PACKAGE_VERSION=0.1.0-preview.67 \
 LIBREWINFORMS_CANONICAL_WFI_PACKAGE_SOURCE=/path/to/LibreWPF/artifacts/packages/CanonicalWinForms \
 LIBREWINFORMS_CANONICAL_WFI_COMMIT=<librewpf-commit> \
 ./eng/librewinforms-pack.sh
