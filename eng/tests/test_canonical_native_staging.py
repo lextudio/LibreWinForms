@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]
+HELPER_COMMIT = "fd51401e94b3dbe1fec3d960626d8fe41f1adb4a"
 
 
 def drawing_package_ids():
@@ -36,6 +37,8 @@ def verify_drawing_source_closure(package_ids):
 
 
 class CanonicalNativeStagingTests(unittest.TestCase):
+    helper_checkout_path = "artifacts/checkouts/wpf-native-staging"
+
     def test_release_registry_covers_actual_source_dependencies(self):
         verify_drawing_source_closure(drawing_package_ids())
 
@@ -55,6 +58,13 @@ class CanonicalNativeStagingTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/librewinforms-ci.yml").read_text()
         package = workflow.split("\n  packages:\n", 1)[1]
         self.assertIn("      actions: read\n", package)
+        self.assertIn("LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT: " + HELPER_COMMIT, package)
+        checkout = package.split("      - name: Checkout immutable LibreWPF native staging helper\n", 1)[1].split("\n      - name:", 1)[0]
+        for entry in ("ref: ${{ env.LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT }}",
+                      "path: artifacts/checkouts/wpf-native-staging",
+                      "eng/progpu-stage-ci-native-runtimes.sh",
+                      "eng/progpu-stage-release-native-packages.py"):
+            self.assertIn(entry, checkout)
         name = "      - name: Stage exact successful ProGPU native runtimes for canonical packaging\n"
         self.assertLess(package.index("      - name: Align canonical LibreWPF ProGPU checkout\n"), package.index(name))
         self.assertLess(package.index(name), package.index("      - name: Build canonical WindowsFormsIntegration from LibreWPF source\n"))
@@ -62,18 +72,23 @@ class CanonicalNativeStagingTests(unittest.TestCase):
         self.assertIn("GH_TOKEN: ${{ github.token }}", step)
         return "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
 
-    def run_step(self, helper_status=0, git_status=0):
+    def run_step(self, helper_status=0, git_status=0, helper_commit=HELPER_COMMIT):
         with tempfile.TemporaryDirectory(prefix="forms-canonical-staging-") as temporary:
             root = Path(temporary)
-            helper = root / "artifacts/checkouts/wpf-canonical/eng/progpu-stage-ci-native-runtimes.sh"
+            helper = root / self.helper_checkout_path / "eng/progpu-stage-ci-native-runtimes.sh"
             helper.parent.mkdir(parents=True)
             # Recording stub only: no runtime bytes or package files are created.
             helper.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$STAGING_RECEIPT"\nexit "$STAGING_STATUS"\n')
             helper.chmod(0o755)
             receipt = root / "arguments"
             environment = dict(os.environ, GITHUB_WORKSPACE=str(root), STAGING_RECEIPT=str(receipt),
-                               STAGING_STATUS=str(helper_status), GIT_STATUS=str(git_status))
+                               STAGING_STATUS=str(helper_status), GIT_STATUS=str(git_status),
+                               LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT=HELPER_COMMIT, HELPER_COMMIT=helper_commit)
             script = '''git() {
+  if test "$*" = "-C artifacts/checkouts/wpf-native-staging rev-parse HEAD"; then
+    printf '%s\\n' "$HELPER_COMMIT"
+    return 0
+  fi
   test "$*" = "-C external/ProGPU rev-parse HEAD" || return 91
   test "$GIT_STATUS" = 0 || return "$GIT_STATUS"
   printf '%s\\n' aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -98,7 +113,16 @@ class CanonicalNativeStagingTests(unittest.TestCase):
         self.assertEqual(arguments, [])
 
 
+class PackageNativeHelperIdentityTests(unittest.TestCase):
+    def test_replaced_helper_checkout_never_stages(self):
+        status, arguments, _ = CanonicalNativeStagingTests().run_step(helper_commit="b" * 40)
+        self.assertNotEqual(status, 0)
+        self.assertEqual(arguments, [])
+
+
 class ReleaseNativeStagingTests(CanonicalNativeStagingTests):
+    helper_checkout_path = "artifacts/checkouts/wpf-canonical"
+
     def staging_step(self):
         workflow = (ROOT / ".github/workflows/librewinforms-release.yml").read_text()
         self.assertIn("permissions:\n  actions: read\n  contents: write\n", workflow)
@@ -116,7 +140,7 @@ class ReleaseNativeStagingTests(CanonicalNativeStagingTests):
 
 
 class SourceFirstNativeStagingTests(unittest.TestCase):
-    helper_commit = "caf3077d54cccbea5f0c5b09ece69087b80aee3a"
+    helper_commit = HELPER_COMMIT
 
     def staging_step(self):
         workflow = (ROOT / ".github/workflows/librewinforms-ci.yml").read_text()
@@ -133,7 +157,9 @@ class SourceFirstNativeStagingTests(unittest.TestCase):
         for setting in ("uses: actions/checkout@v4", "repository: wieslawsoltes/LibreWPF",
                         "ref: ${{ env.LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT }}",
                         "path: artifacts/checkouts/wpf-native-staging",
-                        "sparse-checkout: eng/progpu-stage-ci-native-runtimes.sh",
+                        "sparse-checkout: |",
+                        "eng/progpu-stage-ci-native-runtimes.sh",
+                        "eng/progpu-stage-release-native-packages.py",
                         "sparse-checkout-cone-mode: false"):
             self.assertIn(setting, helper_checkout)
         step = job.split(stage, 1)[1].split("\n      - name:", 1)[0]
