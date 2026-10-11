@@ -460,6 +460,7 @@ public sealed partial class NativeModalWindowLifetimeTests
             _held = true;
             return _begin?.Invoke() ?? new Lease();
         }
+
         private sealed class Lease : INativeModalDialogLease { }
         internal bool _held, _active;
         internal int _polls, _releases;
