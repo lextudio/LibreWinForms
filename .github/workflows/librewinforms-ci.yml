@@ -243,7 +243,7 @@ jobs:
       contents: read
       actions: read
     env:
-      LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT: d8a3a153bfd3d180023d119001e94da50c2eeca1
+      LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT: fd51401e94b3dbe1fec3d960626d8fe41f1adb4a
 
     steps:
       - name: Checkout
@@ -315,7 +315,9 @@ jobs:
           repository: wieslawsoltes/LibreWPF
           ref: ${{ env.LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT }}
           path: artifacts/checkouts/wpf-native-staging
-          sparse-checkout: eng/progpu-stage-ci-native-runtimes.sh
+          sparse-checkout: |
+            eng/progpu-stage-ci-native-runtimes.sh
+            eng/progpu-stage-release-native-packages.py
           sparse-checkout-cone-mode: false
 
       - name: Stage exact successful ProGPU native runtimes for source-first packaging
@@ -516,6 +518,7 @@ jobs:
       LIBREWINFORMS_PROGPU_PACKAGE_VERSION: 0.1.0-preview.65
       LIBREWINFORMS_BRIDGE_REF: librewpf-v0.1.0-preview.65
       LIBREWINFORMS_CANONICAL_WFI_REF: librewpf-v0.1.0-preview.65
+      LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT: fd51401e94b3dbe1fec3d960626d8fe41f1adb4a
 
     steps:
       - name: Checkout
@@ -565,14 +568,26 @@ jobs:
           git -C artifacts/checkouts/wpf-canonical/external/ProGPU checkout --detach "${qualified_progpu_commit}"
           test "$(git -C artifacts/checkouts/wpf-canonical/external/ProGPU rev-parse HEAD)" = "$(git -C external/ProGPU rev-parse HEAD)"
 
+      - name: Checkout immutable LibreWPF native staging helper
+        uses: actions/checkout@v4
+        with:
+          repository: wieslawsoltes/LibreWPF
+          ref: ${{ env.LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT }}
+          path: artifacts/checkouts/wpf-native-staging
+          sparse-checkout: |
+            eng/progpu-stage-ci-native-runtimes.sh
+            eng/progpu-stage-release-native-packages.py
+          sparse-checkout-cone-mode: false
+
       - name: Stage exact successful ProGPU native runtimes for canonical packaging
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          test "$(git -C artifacts/checkouts/wpf-native-staging rev-parse HEAD)" = "${LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT}"
           qualified_progpu_commit="$(git -C external/ProGPU rev-parse HEAD)"
-          ./artifacts/checkouts/wpf-canonical/eng/progpu-stage-ci-native-runtimes.sh \
+          ./artifacts/checkouts/wpf-native-staging/eng/progpu-stage-ci-native-runtimes.sh \
             "${qualified_progpu_commit}" \
             "${GITHUB_WORKSPACE}/external/ProGPU/artifacts/progpu-native/package"
 
