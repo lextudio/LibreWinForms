@@ -292,10 +292,15 @@ def reject_consumer(args, scratch, environment, evidence, name, framework, code,
     return {"case": name, "command": command, "exitCode": exit_code, "error": code}
 
 
-def project_references(args, scratch, environment, evidence, framework):
-    case = scratch / (framework + "-project-references")
+def project_references(args, scratch, environment, evidence, framework, language):
+    require(language in ("CSharp", "VisualBasic"), "Unknown analyzer language")
+    case = scratch / (framework + "-project-references-" + language)
     project = write_project(case, args.sdk_version, framework, "Exe", {
         "LibreWinFormsReferenceMode": "Project", "LibreWinFormsSourceRoot": str(args.repo_root) + "/"})
+    if language == "VisualBasic":
+        project = project.rename(project.with_suffix(".vbproj"))
+        (case / "Program.cs").unlink()
+        (case / "Program.vb").write_text("Module Program\n    Sub Main()\n    End Sub\nEnd Module\n", encoding="utf-8")
     command = [args.dotnet, "msbuild", str(project), "-nologo", "-nr:false",
                "-target:FrameworkContractProjectReferences"]
     log = evidence / (case.name + ".log")
@@ -330,17 +335,20 @@ def project_references(args, scratch, environment, evidence, framework):
             f"Real GetTargetFrameworks output differs from {framework}: {actual!r}")
     analyzer_outputs = (case / "analyzer-frameworks.txt").read_text(encoding="utf-8-sig").splitlines()
     analyzers = [line.rsplit("|", 1) for line in analyzer_outputs]
+    # The SDK retains all three original analyzer payloads, but each consumer
+    # references the shared project and its own language project only.
+    language_extension = "csproj" if language == "CSharp" else "vbproj"
     expected_analyzers = {(args.repo_root / path).resolve() for path in (
         "src/System.Windows.Forms.Analyzers/src/System.Windows.Forms.Analyzers.csproj",
-        "src/System.Windows.Forms.Analyzers.CSharp/src/System.Windows.Forms.Analyzers.CSharp.csproj",
-        "src/System.Windows.Forms.Analyzers.VisualBasic/src/System.Windows.Forms.Analyzers.VisualBasic.vbproj")}
-    require(len(analyzers) == 3 and {Path(path).resolve() for path, _ in analyzers} == expected_analyzers
+        f"src/System.Windows.Forms.Analyzers.{language}/src/System.Windows.Forms.Analyzers.{language}.{language_extension}")}
+    require(len(analyzers) == 2 and {Path(path).resolve() for path, _ in analyzers} == expected_analyzers
             and all(tfm == "netstandard2.0" for _, tfm in analyzers),
             f"Original analyzer reference frameworks changed: {analyzers!r}")
     for filename in ("project-properties.txt", "project-frameworks.txt", "analyzer-frameworks.txt"):
         copy_text(case / filename, evidence / (case.name + "-" + filename))
     return {"case": case.name, "command": command, "directReferences": [str(path) for path in sorted(expected)],
-            "framework": framework, "sourceBuildExecuted": False}
+            "framework": framework, "language": language,
+            "analyzerReferences": [str(path) for path in sorted(expected_analyzers)], "sourceBuildExecuted": False}
 
 
 def late_forms_opt_out(args, scratch, environment, evidence, framework):
@@ -438,7 +446,8 @@ def main():
         require(installed.is_file() and installed.read_bytes() == sdk.read_bytes(),
                 "SDK resolver did not install the exact supplied producer archive")
         for tfm in TFMS:
-            results.append(project_references(args, scratch, environment, evidence, tfm))
+            for language in ("CSharp", "VisualBasic"):
+                results.append(project_references(args, scratch, environment, evidence, tfm, language))
     (evidence / "results.json").write_text(json.dumps({"schemaVersion": 1, "results": results,
                                                       "applicationExecution": False}, indent=2) + "\n", encoding="utf-8")
     print(f"PASS SDK framework contract: {len(results)} cases; compiled/evaluated only, no application execution")

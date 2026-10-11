@@ -88,3 +88,19 @@ No build, restore, test, XML verifier, package probe, native UI run, or CI dispa
 was performed while authoring this fix. These controls do not establish package
 runtime or desktop qualification. Dependency pins and default branches remain
 unchanged.
+
+## Integration framework controls (2026-10-11)
+
+The package lane verified all 42 original analyzer files, four rejected archive
+controls and 88 compiler contracts, then exposed a stale framework assertion:
+a C# consumer was incorrectly required to reference the Visual Basic analyzer.
+The SDK correctly selects the shared analyzer plus the consumer's language
+analyzer while retaining all three original assemblies in its package.
+
+Framework observation now evaluates C# and Visual Basic projects separately for
+both net10.0 and net11.0. Each must report the same three original runtime
+references at the requested TFM and exactly the shared/language analyzer pair at
+netstandard2.0. Missing, extra or retargeted analyzers still fail. All four real
+GetTargetFrameworks evaluations pass locally using the current SDK source
+imports; this is source evaluation, not a packaged application result. Complete
+package CI remains required before release.
