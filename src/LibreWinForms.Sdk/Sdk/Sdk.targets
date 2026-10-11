@@ -10,6 +10,10 @@
     <LibreWinFormsUseProGpuSystemDrawing>true</LibreWinFormsUseProGpuSystemDrawing>
     <MicrosoftNETCoreAppRefPackageVersion></MicrosoftNETCoreAppRefPackageVersion>
     <UseWindowsForms Condition="'$(LibreWinFormsUsePortableFrameworkReferences)' == 'true'">false</UseWindowsForms>
+    <!-- Select before Microsoft.NET.Sdk imports NuGet's restore target. Static
+         graph restore preserves each ProjectReference's AdditionalProperties;
+         recursive restore flattens them to paths and loses the selected TFM. -->
+    <RestoreUseStaticGraphEvaluation Condition="'$(LibreWinFormsUsePortableFrameworkReferences)' == 'true' And '$(LibreWinFormsReferenceMode)' == 'Project' And '$(RestoreUseStaticGraphEvaluation)' == ''">true</RestoreUseStaticGraphEvaluation>
   </PropertyGroup>
 
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />

@@ -104,3 +104,29 @@ netstandard2.0. Missing, extra or retargeted analyzers still fail. All four real
 GetTargetFrameworks evaluations pass locally using the current SDK source
 imports; this is source evaluation, not a packaged application result. Complete
 package CI remains required before release.
+
+## Complete Project graph policy (2026-10-11)
+
+The actual source-first package consumer exposed concurrent writes to
+Accessibility dependency metadata and Forms.Primitives resources. NuGet-added
+transitive project references had lost the canonical direct references' global
+properties. MSBuild consequently scheduled two instances of the same source
+project against one output directory.
+
+The SDK now restores Project mode with MSBuild static graph evaluation, selected
+before the Microsoft SDK imports NuGet targets. This preserves per-edge
+AdditionalProperties during restore; recursive path-only restore otherwise
+selects the upstream net11 default even for a net10 consumer. After NuGet adds
+transitive compiler references, canonical Forms and the selected ProGPU source
+closure receive the same original framework and Drawing policy as direct edges.
+Caller-owned projects and original analyzer references keep their own policy.
+Source-root discovery reuses the source checkout's existing ProGPU props.
+
+The original net11 source-first application compiled with four parallel build
+nodes and completed its unchanged API/designer/Drawing smoke. No source output
+was built twice. New restored-graph controls pass for net10 and net11: all 20
+runtime references retain the selected policy, both original analyzers remain
+netstandard2.0, and unrelated direct/transitive caller projects remain unchanged.
+These checks use actual source SDK imports. The corresponding packaged SDK
+controls run in the existing full package lane before release; source checks do
+not replace that lane or the separate stable .NET 10 compiler-host gate.

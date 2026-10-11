@@ -351,6 +351,64 @@ def project_references(args, scratch, environment, evidence, framework, language
             "analyzerReferences": [str(path) for path in sorted(expected_analyzers)], "sourceBuildExecuted": False}
 
 
+def project_reference_closure(args, scratch, environment, evidence, framework):
+    case = scratch / (framework + "-project-reference-closure")
+    project = write_project(case, args.sdk_version, framework, "Exe", {
+        "LibreWinFormsReferenceMode": "Project", "LibreWinFormsSourceRoot": str(args.repo_root) + "/"})
+    # A caller-owned direct/transitive pair must retain its own build policy.
+    # These projects are real restore inputs outside the selected source checkout.
+    for name in ("Caller", "Leaf"):
+        directory = case / name
+        directory.mkdir()
+        reference = '<ItemGroup><ProjectReference Include="../Leaf/Leaf.csproj" /></ItemGroup>' if name == "Caller" else ""
+        (directory / (name + ".csproj")).write_text(
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework>'
+            '<EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>' + reference + '</Project>\n',
+            encoding="utf-8")
+    project.write_text(project.read_text(encoding="utf-8").replace(
+        '</Project>', '<ItemGroup><ProjectReference Include="Caller/Caller.csproj" /></ItemGroup></Project>'),
+        encoding="utf-8")
+    restore = [args.dotnet, "restore", str(project), "--nologo", "-nr:false"]
+    restore_log = evidence / (case.name + "-restore.log")
+    require(run_command(restore, scratch, environment, restore_log) == 0,
+            f"Original project closure restore failed: {restore_log}")
+    command = [args.dotnet, "msbuild", str(project), "-nologo", "-nr:false",
+               "-target:PrepareProjectReferences", "-getItem:_MSBuildProjectReferenceExistent"]
+    log = evidence / (case.name + ".log")
+    require(run_command(command, scratch, environment, log) == 0,
+            f"Original project closure evaluation failed: {log}")
+    text = log.read_text(encoding="utf-8-sig")
+    start = text.find('{\n  "Items"')
+    require(start >= 0, "Missing original prepared project-reference receipt")
+    references = json.loads(text[start:])["Items"]["_MSBuildProjectReferenceExistent"]
+    controls = {(case / "Caller/Caller.csproj").resolve(), (case / "Leaf/Leaf.csproj").resolve()}
+    seen_controls = set()
+    runtime_references = []
+    analyzers = []
+    for item in references:
+        path = Path(item["FullPath"]).resolve()
+        properties = dict(value.split("=", 1) for value in item.get("AdditionalProperties", "").split(";") if value)
+        if path in controls:
+            require("NetCurrent" not in properties, f"Caller project acquired source policy: {path}")
+            seen_controls.add(path)
+        elif item.get("ReferenceOutputAssembly") == "false":
+            require("NetCurrent" not in properties and item["NearestTargetFramework"] == "netstandard2.0",
+                    f"Original analyzer policy changed: {path}")
+            analyzers.append(str(path))
+        else:
+            require(properties.get("NetCurrent") == framework,
+                    f"Source closure lost NetCurrent={framework}: {path}")
+            expected = "net10.0" if path.name.startswith(("ProGPU.", "SkiaSharp.", "System.Drawing.Common.")) else framework
+            require(item["NearestTargetFramework"] == expected,
+                    f"Source closure selected the wrong framework: {path}")
+            runtime_references.append(str(path))
+    require(seen_controls == controls and len(analyzers) == 2 and len(runtime_references) > 3,
+            "Prepared graph omitted original runtime, analyzer or caller transitive references")
+    return {"case": case.name, "command": command, "framework": framework,
+            "runtimeReferences": runtime_references, "analyzerReferences": analyzers,
+            "callerReferences": [str(path) for path in sorted(seen_controls)], "sourceBuildExecuted": False}
+
+
 def late_forms_opt_out(args, scratch, environment, evidence, framework):
     case = scratch / "body-false-overrides-early-request"
     project = write_project(case, args.sdk_version, framework, "Exe", {"UseWindowsForms": "false"})
@@ -448,6 +506,7 @@ def main():
         for tfm in TFMS:
             for language in ("CSharp", "VisualBasic"):
                 results.append(project_references(args, scratch, environment, evidence, tfm, language))
+            results.append(project_reference_closure(args, scratch, environment, evidence, tfm))
     (evidence / "results.json").write_text(json.dumps({"schemaVersion": 1, "results": results,
                                                       "applicationExecution": False}, indent=2) + "\n", encoding="utf-8")
     print(f"PASS SDK framework contract: {len(results)} cases; compiled/evaluated only, no application execution")

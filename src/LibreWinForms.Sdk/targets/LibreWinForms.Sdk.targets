@@ -2,6 +2,8 @@
   <Import Project="$(MSBuildThisFileDirectory)LibreWinForms.DrawingIdentity.targets"
           Condition="'$(_LibreWinFormsDrawingIdentityTargetsImported)' != 'true'" />
   <Import Project="$(MSBuildThisFileDirectory)LibreWinForms.Analyzers.targets" />
+  <Import Project="$(LibreWinFormsSourceRoot)eng/LibreWinForms.ProGPU.props"
+          Condition="'$(LibreWinFormsUsePortableFrameworkReferences)' == 'true' And '$(LibreWinFormsReferenceMode)' == 'Project' And '$(LibreWinFormsSourceRoot)' != '' And Exists('$(LibreWinFormsSourceRoot)eng/LibreWinForms.ProGPU.props')" />
   <Target Name="_LibreWinFormsValidateCanonicalSdkConfiguration"
           BeforeTargets="PrepareForBuild">
     <Error Condition="'$(LibreWinFormsUseCanonicalRuntime)' != 'true'"
@@ -38,11 +40,24 @@
           AfterTargets="IncludeTransitiveProjectReferences"
           BeforeTargets="AssignProjectConfiguration"
           Condition="'$(LibreWinFormsUsePortableFrameworkReferences)' == 'true' And '$(LibreWinFormsReferenceMode)' == 'Project' And '@(ProjectReference)' != ''">
+    <PropertyGroup>
+      <_LibreWinFormsCanonicalSourceRoot>$([MSBuild]::NormalizeDirectory('$(LibreWinFormsSourceRoot)'))</_LibreWinFormsCanonicalSourceRoot>
+      <_LibreWinFormsCanonicalProGpuRoot Condition="'$(LibreWinFormsProGpuSourceRoot)' != ''">$([MSBuild]::NormalizeDirectory('$(LibreWinFormsProGpuSourceRoot)'))</_LibreWinFormsCanonicalProGpuRoot>
+    </PropertyGroup>
     <ItemGroup>
       <_LibreWinFormsCanonicalProjectReference Include="@(ProjectReference)" />
       <ProjectReference Remove="@(ProjectReference)" />
       <ProjectReference Include="@(_LibreWinFormsCanonicalProjectReference->'%(FullPath)')" />
       <_LibreWinFormsCanonicalProjectReference Remove="@(_LibreWinFormsCanonicalProjectReference)" />
+      <!-- NuGet adds transitive references without the direct edge's global
+           properties. Reaching the same source output with and without NetCurrent
+           creates two builds (and can select the upstream net11 default for a
+           net10 consumer). Keep the selected source closure on one property set;
+           caller projects and the original analyzer references are independent. -->
+      <ProjectReference Update="@(ProjectReference)"
+                        Condition="'%(ProjectReference.ReferenceOutputAssembly)' != 'false' And ($([System.String]::Copy('%(ProjectReference.FullPath)').StartsWith('$(_LibreWinFormsCanonicalSourceRoot)')) Or ('$(_LibreWinFormsCanonicalProGpuRoot)' != '' And $([System.String]::Copy('%(ProjectReference.FullPath)').StartsWith('$(_LibreWinFormsCanonicalProGpuRoot)'))))">
+        <AdditionalProperties>%(ProjectReference.AdditionalProperties);NetCurrent=$(TargetFramework);LibreWinFormsReferenceMode=Project;LibreWinFormsUseProGpuSystemDrawing=true;MicrosoftNETCoreAppRefPackageVersion=</AdditionalProperties>
+      </ProjectReference>
     </ItemGroup>
   </Target>
 
