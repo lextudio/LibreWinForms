@@ -94,6 +94,23 @@ class CanonicalNativeStagingTests(unittest.TestCase):
         self.assertEqual(arguments, [])
 
 
+class ReleaseNativeStagingTests(CanonicalNativeStagingTests):
+    def staging_step(self):
+        workflow = (ROOT / ".github/workflows/librewinforms-release.yml").read_text()
+        self.assertIn("permissions:\n  actions: read\n  contents: write\n", workflow)
+        names = ["Align canonical LibreWPF ProGPU checkout",
+                 "Stage exact successful ProGPU native runtimes for canonical packaging",
+                 "Build canonical WindowsFormsIntegration from LibreWPF source",
+                 "Build and pack"]
+        positions = [workflow.index("      - name: " + name + "\n") for name in names]
+        self.assertEqual(positions, sorted(positions),
+                         "release canonical packaging must follow exact producer admission")
+        step = workflow.split("      - name: " + names[1] + "\n", 1)[1].split("\n      - name:", 1)[0]
+        self.assertIn("GH_TOKEN: ${{ github.token }}", step)
+        self.assertNotIn("continue-on-error", step)
+        return "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+
+
 class SourceFirstNativeStagingTests(unittest.TestCase):
     helper_commit = "d8a3a153bfd3d180023d119001e94da50c2eeca1"
 
