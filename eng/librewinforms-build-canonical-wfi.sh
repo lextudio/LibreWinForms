@@ -32,16 +32,15 @@ if [[ "$(git -C "${repo_root}" ls-tree HEAD external/ProGPU | awk '{ print $3 }'
   exit 1
 fi
 
-# LibreWPF's canonical integration script accepts the qualified LibreWinForms
-# ProGPU root, but PresentationCore still has source-relative references to the
-# ProGPU checkout nested under LibreWPF. Keep that second physical checkout at
-# the same immutable commit and emit its reference assemblies before the WPF
-# graph is built. A symlink is deliberately unsupported: two project paths to
-# one physical obj tree can race and leave reference assemblies missing.
+# PresentationCore retains its source-relative WinRT dependency. Keep that
+# second physical ProGPU checkout at the same immutable commit, while Interop
+# is built from its LibreWPF owner. Never alias separate project paths to one
+# physical obj tree.
 librewpf_progpu_root="${librewpf_root}/external/ProGPU"
+librewpf_interop_project="${librewpf_root}/src/ProGPU.Wpf.Interop/ProGPU.Wpf.Interop.csproj"
 if [[ ! -f "${librewpf_progpu_root}/src/ProGPU.WinRT/ProGPU.WinRT.csproj" \
-   || ! -f "${librewpf_progpu_root}/src/ProGPU.Wpf.Interop/ProGPU.Wpf.Interop.csproj" ]]; then
-  echo "Initialize LibreWPF's external/ProGPU checkout before building canonical WFI." >&2
+   || ! -f "${librewpf_interop_project}" ]]; then
+  echo "Canonical WFI requires LibreWPF's owned Interop project and its initialized ProGPU checkout." >&2
   exit 1
 fi
 
@@ -51,9 +50,14 @@ if [[ "${librewpf_progpu_commit}" != "${progpu_commit}" ]]; then
   exit 1
 fi
 
+python3 "${librewpf_progpu_root}/eng/progpu-prepare-framework-sources.py"
+export ProGpuSourceRoot="${librewpf_progpu_root}/"
+export LibreWpfSourceRoot="${librewpf_root}/"
+export LibreWinFormsSourceRoot="${repo_root}/"
+
 for librewpf_progpu_reference_project in \
   "${librewpf_progpu_root}/src/ProGPU.WinRT/ProGPU.WinRT.csproj" \
-  "${librewpf_progpu_root}/src/ProGPU.Wpf.Interop/ProGPU.Wpf.Interop.csproj"
+  "${librewpf_interop_project}"
 do
   "${librewpf_root}/eng/common/dotnet.sh" build \
     "${librewpf_progpu_reference_project}" \

@@ -25,9 +25,14 @@ def verify_drawing_source_closure(package_ids):
     for package_id in package_ids:
         project_name = {"ProGPU.System.Drawing.Common": "System.Drawing.Common",
                         "ProGPU.SkiaSharp": "SkiaSharp"}.get(package_id, package_id)
-        project = ROOT / "external/ProGPU/src" / project_name / (project_name + ".csproj")
+        progpu_root = ROOT / "external/ProGPU"
+        source_root = ROOT / "src/ProGPU.Drawing" if package_id == "ProGPU.System.Drawing.Common" else progpu_root / "src"
+        project = source_root / project_name / (project_name + ".csproj")
         for reference in ET.parse(project).findall("./ItemGroup/ProjectReference"):
-            dependency = (project.parent / reference.attrib["Include"].replace("\\", "/")).resolve()
+            include = reference.attrib["Include"].replace("\\", "/").replace("$(ProGpuSourceRoot)", str(progpu_root))
+            if "$(" in include:
+                raise ValueError(f"Unresolved source dependency: {include}")
+            dependency = (project.parent / include).resolve()
             dependency_id = ET.parse(dependency).findtext("./PropertyGroup/PackageId") or dependency.stem
             if dependency_id not in seen:
                 raise ValueError(f"{package_id} requires earlier dependency {dependency_id}")

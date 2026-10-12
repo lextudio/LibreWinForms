@@ -34,3 +34,10 @@ dotnet test /path/to/LibreWinForms/src/ProGPU.Drawing/System.Drawing.Common.Test
 The repository's normal source-first/package workflows remain the complete
 consumer gates. Preserve published history; remove only obsolete generated
 outputs after their logs and required diagnostics have been retained.
+
+Canonical WindowsFormsIntegration packaging now requires a LibreWPF revision
+that owns `src/ProGPU.Wpf.Interop`. Its source gate builds that project from
+LibreWPF while both physical ProGPU checkouts use the same qualified producer
+commit. CI records the exact candidate LibreWPF source revision and qualifies
+its canonical WFI package with the current Forms source; this source checkpoint
+does not claim completion of LibreWPF's separate whole-repository Build.
