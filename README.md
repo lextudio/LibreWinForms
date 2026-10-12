@@ -123,7 +123,7 @@ The preview package set is defined in `eng/librewinforms-package-list.sh` and va
 
 ### Bridge Packages
 
-The canonical runtime and its ten-package ProGPU drawing closure are built from this repository and its pinned ProGPU submodule. `WindowsFormsIntegration` is built from the real LibreWPF source at a recorded commit; the release handoff requires exact LibreWinForms and ProGPU provenance, compares the generated managed-contract documents, and rejects the retired compatibility package identity.
+The canonical runtime and portable `System.Drawing.Common` implementation/tests/benchmarks are owned by this repository. Their ten-package rendering dependency closure uses the pinned ProGPU submodule. See [Drawing source ownership](docs/drawing-source-ownership.md). `WindowsFormsIntegration` is built from the real LibreWPF source at a recorded commit; the release handoff requires exact LibreWinForms and ProGPU provenance, compares the generated managed-contract documents, and rejects the retired compatibility package identity.
 
 | Package | NuGet | Purpose |
 | --- | --- | --- |
@@ -187,7 +187,7 @@ LIBREWINFORMS_CANONICAL_WFI_COMMIT=<librewpf-commit> \
 ./eng/librewinforms-pack.sh
 ```
 
-`LIBREWINFORMS_PROGPU_PACKAGE_VERSION` labels the current drawing closure built from the submodule. Canonical Forms and backend packages target `net10.0`, so WFI and `net10.0` through later .NET consumers resolve one qualified assembly set.
+`LIBREWINFORMS_PROGPU_PACKAGE_VERSION` labels the current drawing closure built from the repository-owned Drawing project and pinned ProGPU dependencies. Canonical Forms and backend packages target `net10.0`, so WFI and `net10.0` through later .NET consumers resolve one qualified assembly set.
 
 GitHub workflows:
 

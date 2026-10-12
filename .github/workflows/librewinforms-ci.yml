@@ -517,7 +517,8 @@ jobs:
       LIBREWINFORMS_BRIDGE_PACKAGE_VERSION: 0.1.0-preview.65
       LIBREWINFORMS_PROGPU_PACKAGE_VERSION: 0.1.0-preview.65
       LIBREWINFORMS_BRIDGE_REF: librewpf-v0.1.0-preview.65
-      LIBREWINFORMS_CANONICAL_WFI_REF: librewpf-v0.1.0-preview.65
+      # Qualify the migrated canonical source together with this Forms candidate.
+      LIBREWINFORMS_CANONICAL_WFI_REF: beb9a867a1764ac5a63430b89487a079bf8ae115
       LIBREWINFORMS_NATIVE_STAGING_WPF_COMMIT: fd51401e94b3dbe1fec3d960626d8fe41f1adb4a
 
     steps:

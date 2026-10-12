@@ -26,7 +26,7 @@ class DrawingTraceGateTests(unittest.TestCase):
     def test_other_configurations_keep_original_command_and_explicit_no_trace_notice(self):
         fallback = self.gate.split('\n  else\n', 1)[1]
         self.assertIn('Drawing trace disabled: the pinned collector supports Release; preserving ${configuration} tests.', fallback)
-        self.assertIn('dotnet test src/System.Drawing.Common.Tests/System.Drawing.Common.Tests.csproj \\\n'
+        self.assertIn('dotnet test "${drawing_tests}" -p:ProGpuSourceRoot="${progpu_root}/" \\\n'
                       '      --configuration "${configuration}" \\\n'
                       '      --nologo', fallback)
         self.assertNotIn('progpu-test-system-drawing.py', fallback)

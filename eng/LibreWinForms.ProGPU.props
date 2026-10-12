@@ -12,8 +12,9 @@
       they move to the explicit source-root property.
     -->
     <LibreWinFormsProGpuSourceRoot
-      Condition="'$(LibreWinFormsProGpuSourceRoot)' == '' And Exists('$(MSBuildThisFileDirectory)..\external\ProGPU\src\System.Drawing.Common\System.Drawing.Common.csproj')">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\external\ProGPU'))</LibreWinFormsProGpuSourceRoot>
+      Condition="'$(LibreWinFormsProGpuSourceRoot)' == '' And Exists('$(MSBuildThisFileDirectory)..\external\ProGPU\src\ProGPU.Backend\ProGPU.Backend.csproj')">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\external\ProGPU'))</LibreWinFormsProGpuSourceRoot>
     <LibreWinFormsProGpuSourceRoot
-      Condition="'$(LibreWinFormsProGpuSourceRoot)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\ProGPU\src\System.Drawing.Common\System.Drawing.Common.csproj')">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\..\ProGPU'))</LibreWinFormsProGpuSourceRoot>
+      Condition="'$(LibreWinFormsProGpuSourceRoot)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\ProGPU\src\ProGPU.Backend\ProGPU.Backend.csproj')">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\..\ProGPU'))</LibreWinFormsProGpuSourceRoot>
+    <LibreWinFormsDrawingRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..\src\ProGPU.Drawing'))</LibreWinFormsDrawingRoot>
   </PropertyGroup>
 </Project>

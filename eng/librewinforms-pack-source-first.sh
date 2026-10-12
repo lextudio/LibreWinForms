@@ -11,6 +11,8 @@ export DOTNET_ROLL_FORWARD="${DOTNET_ROLL_FORWARD:-Major}"
 export DOTNET_ROLL_FORWARD_TO_PRERELEASE="${DOTNET_ROLL_FORWARD_TO_PRERELEASE:-1}"
 
 configuration="${LIBREWINFORMS_CONFIGURATION:-Release}"
+export LibreWinFormsSourceRoot="${repo_root}/"
+python3 "${repo_root}/external/ProGPU/eng/progpu-prepare-framework-sources.py"
 package_target_framework="net10.0"
 package_netcore_ref_version="10.0.5"
 package_version="${LIBREWINFORMS_SOURCE_FIRST_PACKAGE_VERSION:-0.1.0-source-first}"
@@ -34,7 +36,7 @@ PROGPU_PACKAGE_OUTPUT="${progpu_package_output}" \
 PROGPU_PACKAGE_GROUP=drawing-runtime \
   "${repo_root}/external/ProGPU/eng/progpu-pack.sh"
 cp "${progpu_package_output}"/*.nupkg "${progpu_package_output}"/*.snupkg "${package_output}/"
-progpu_drawing_source_hash="$(sha256sum "${repo_root}/external/ProGPU/src/System.Drawing.Common/bin/${configuration}/net10.0/System.Drawing.Common.dll" | cut -d' ' -f1)"
+progpu_drawing_source_hash="$(sha256sum "${repo_root}/src/ProGPU.Drawing/System.Drawing.Common/bin/${configuration}/net10.0/System.Drawing.Common.dll" | cut -d' ' -f1)"
 
 canonical_pack_config="${smoke_root}/canonical-NuGet.config"
 cp "${repo_root}/NuGet.config" "${canonical_pack_config}"
@@ -332,7 +334,7 @@ sdk_smoke_output="${sdk_smoke_root}/bin/${configuration}/net11.0"
 sdk_smoke_deps="${sdk_smoke_output}/LibreWinForms.Sdk.SourceFirstSmoke.deps.json"
 sdk_smoke_drawing="${sdk_smoke_output}/System.Drawing.Common.dll"
 sdk_smoke_bootstrap="${sdk_smoke_root}/obj/${configuration}/net11.0/LibreWinForms.ApplicationBootstrap.g.cs"
-source_drawing="${repo_root}/external/ProGPU/src/System.Drawing.Common/bin/${configuration}/net10.0/System.Drawing.Common.dll"
+source_drawing="${repo_root}/src/ProGPU.Drawing/System.Drawing.Common/bin/${configuration}/net10.0/System.Drawing.Common.dll"
 
 if [[ ! -f "${sdk_smoke_bootstrap}" ]] || ! grep -Fq 'LibreWinForms.ProGPU.ProGpuPlatform.Register()' "${sdk_smoke_bootstrap}"; then
   echo "Source-first SDK smoke did not generate the canonical ProGPU bootstrap." >&2
