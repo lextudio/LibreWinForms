@@ -18,12 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(ProGpuSourceRoot)src/ProGPU.Backend/ProGPU.Backend.csproj" />
-    <ProjectReference Include="$(ProGpuSourceRoot)src/ProGPU.Backend.Native/ProGPU.Backend.Native.csproj" />
-    <ProjectReference Include="$(ProGpuSourceRoot)src/ProGPU.Vector/ProGPU.Vector.csproj" />
-    <ProjectReference Include="$(ProGpuSourceRoot)src/ProGPU.Text/ProGPU.Text.csproj" />
-    <ProjectReference Include="$(ProGpuSourceRoot)src/ProGPU.Scene/ProGPU.Scene.csproj" />
-    <ProjectReference Include="$(ProGpuSourceRoot)src/SkiaSharp/SkiaSharp.csproj" />
+    <ProjectReference Include="$(ProGpuSourceRoot)/src/ProGPU.Backend/ProGPU.Backend.csproj" />
+    <ProjectReference Include="$(ProGpuSourceRoot)/src/ProGPU.Backend.Native/ProGPU.Backend.Native.csproj" />
+    <ProjectReference Include="$(ProGpuSourceRoot)/src/ProGPU.Vector/ProGPU.Vector.csproj" />
+    <ProjectReference Include="$(ProGpuSourceRoot)/src/ProGPU.Text/ProGPU.Text.csproj" />
+    <ProjectReference Include="$(ProGpuSourceRoot)/src/ProGPU.Scene/ProGPU.Scene.csproj" />
+    <ProjectReference Include="$(ProGpuSourceRoot)/src/SkiaSharp/SkiaSharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(ProGpuSourceRoot)src/ProGPU.Fonts.Inter/Fonts/Inter-Regular.ttf"
+    <None Include="$(ProGpuSourceRoot)/src/ProGPU.Fonts.Inter/Fonts/Inter-Regular.ttf"
           Link="Fonts\Inter-Regular.ttf"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
