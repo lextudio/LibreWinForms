@@ -97,7 +97,7 @@ SharpDevelop remains the real downstream integration driver.
 Both package-producing jobs in `LibreWinForms Build` stage the pinned ProGPU
 native payload before packing. The source-first job checks out only the existing
 LibreWPF staging helper at immutable commit
-`d8a3a153bfd3d180023d119001e94da50c2eeca1`, verifies that helper checkout and the
+`fd51401e94b3dbe1fec3d960626d8fe41f1adb4a`, verifies that helper checkout and the
 actual ProGPU checkout against Forms' recorded gitlink, and invokes the helper
 unchanged. Staging requires a complete successful `Build` for that exact ProGPU
 commit, never just a successful native job or an artifact from another revision.
@@ -120,6 +120,24 @@ ProGPU drawing package version from its own version unless an explicit
 `progpu_version` override is supplied. The canonical WFI and bridge refs both
 default to the matching immutable LibreWPF tag; a source-branch default must
 not silently enter a public tag release.
+
+Release packaging uses the same Linux display dependencies and `xvfb-run -a`
+as the successful Build package lane. SDK initialization reads the actual
+monitor DPI, so canonical WFI, source-first packing and package smoke all run
+with that display available; the release must not bypass initialization or
+replace monitor state to make a headless job pass.
+
+If a workflow-only correction is needed after a tag was created, dispatch the
+corrected workflow with `source_tag=librewinforms-v<version>` and the matching
+`version`. Checkout and package provenance remain at that existing tag; a
+missing tag, different checkout or version mismatch fails before packaging.
+Recovery also requires whole successful nine-job `LibreWinForms Build` runs
+for both the original source commit and the corrected workflow commit before
+any package upload or publication. The attached
+`librewinforms-release-qualification.json` records both runs. All ordinary
+source, package, native staging and size gates still execute. `publish=true`
+publishes the result and creates the release at the original tag without moving
+it. Offline identity controls do not qualify the recovery execution itself.
 
 After NuGet indexing, dispatch `LibreWinForms Public Package Smoke`. It restores
 only from NuGet.org and builds the unchanged `LibreWinForms.Sdk`, `net11.0`,
