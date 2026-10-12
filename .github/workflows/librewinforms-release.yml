@@ -7,6 +7,10 @@ on:
         description: NuGet package version to build.
         required: true
         default: 0.1.0-preview.67
+      source_tag:
+        description: Existing immutable librewinforms-v tag to rebuild with this workflow. Empty uses the workflow ref.
+        required: false
+        default: ''
       bridge_version:
         description: LibreWPF bridge package version to build against. Defaults to version.
         required: false
@@ -46,17 +50,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.source_tag || github.ref }}
           submodules: recursive
 
       - name: Resolve release version
         id: release
         shell: bash
+        env:
+          REQUESTED_SOURCE_TAG: ${{ inputs.source_tag }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
+          release_tag="${REQUESTED_SOURCE_TAG}"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            version="${GITHUB_REF_NAME#librewinforms-v}"
+            release_tag="${GITHUB_REF_NAME}"
+          fi
+          if [[ -n "${release_tag}" ]]; then
+            if [[ ! "${release_tag}" =~ ^librewinforms-v[0-9][0-9A-Za-z.+-]*$ ]]; then
+              echo "Release source must be an existing librewinforms-v version tag." >&2
+              exit 1
+            fi
+            git show-ref --verify "refs/tags/${release_tag}"
+            test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/${release_tag}^{commit}")"
+            version="${release_tag#librewinforms-v}"
+            if [[ -n "${REQUESTED_VERSION}" && "${REQUESTED_VERSION}" != "${version}" ]]; then
+              echo "Requested version must match the immutable source tag." >&2
+              exit 1
+            fi
           else
-            version="${{ inputs.version }}"
+            version="${REQUESTED_VERSION}"
           fi
           bridge_version="${{ inputs.bridge_version }}"
           if [[ -z "${bridge_version}" ]]; then
@@ -81,6 +103,7 @@ jobs:
           echo "LIBREWINFORMS_CANONICAL_WFI_REF=${canonical_wfi_ref}" >> "${GITHUB_ENV}"
           echo "bridge_ref=${bridge_ref}" >> "${GITHUB_OUTPUT}"
           echo "canonical_wfi_ref=${canonical_wfi_ref}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${release_tag}" >> "${GITHUB_OUTPUT}"
           echo "Resolved LibreWinForms package version: ${version}"
           echo "Resolved LibreWPF bridge package version: ${bridge_version}"
           echo "Resolved immutable ProGPU package version: ${progpu_version}"
@@ -106,6 +129,15 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+
+      - name: Install Linux display for SDK initialization
+        shell: bash
+        run: |
+          ./external/ProGPU/eng/progpu-install-linux-packages.sh \
+            xvfb \
+            libglfw3 \
+            libvulkan1 \
+            mesa-vulkan-drivers
 
       - name: Align canonical LibreWPF ProGPU checkout
         shell: bash
@@ -139,7 +171,7 @@ jobs:
           LIBREWINFORMS_CANONICAL_WFI_SOURCE_ROOT="${GITHUB_WORKSPACE}/artifacts/checkouts/wpf-canonical" \
           LIBREWINFORMS_CANONICAL_WFI_EXPECTED_COMMIT="${canonical_wfi_commit}" \
           LIBREWINFORMS_CANONICAL_WFI_PACKAGE_OUTPUT="${GITHUB_WORKSPACE}/artifacts/checkouts/wpf-canonical/artifacts/packages/CanonicalWinForms" \
-          ./eng/librewinforms-build-canonical-wfi.sh
+          xvfb-run -a ./eng/librewinforms-build-canonical-wfi.sh
           echo "LIBREWINFORMS_CANONICAL_WFI_COMMIT=${canonical_wfi_commit}" >> "${GITHUB_ENV}"
           echo "LIBREWINFORMS_CANONICAL_WFI_PACKAGE_SOURCE=${GITHUB_WORKSPACE}/artifacts/checkouts/wpf-canonical/artifacts/packages/CanonicalWinForms" >> "${GITHUB_ENV}"
 
@@ -157,17 +189,56 @@ jobs:
           set -euo pipefail
           export LIBREWINFORMS_PROGPU_COMMIT="$(git -C external/ProGPU rev-parse HEAD)"
           export LIBREWINFORMS_REQUIRE_CLEAN=1
-          ./eng/librewinforms-pack.sh
+          xvfb-run -a ./eng/librewinforms-pack.sh
 
       - name: Run package-mode SDK smoke
         shell: bash
         run: |
           set -euo pipefail
           export LIBREWINFORMS_BRIDGE_PACKAGE_OUTPUT="${GITHUB_WORKSPACE}/artifacts/checkouts/wpf-bridge/artifacts/packages/Release/NonShipping"
-          ./eng/librewinforms-package-smoke.sh
+          xvfb-run -a ./eng/librewinforms-package-smoke.sh
 
       - name: Validate complete NuGet upload size inventory
         run: python3 external/ProGPU/eng/progpu-verify-package-sizes.py artifacts/packages/Release/NonShipping
+
+      - name: Verify complete source and recovery workflow Build qualification
+        if: ${{ inputs.source_tag != '' }}
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_COMMIT: ${{ github.workflow_sha }}
+        run: |
+          import json, os, pathlib, subprocess, time
+
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", path], text=True))
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          required = set((source, os.environ["WORKFLOW_COMMIT"]))
+          qualified = {}
+          deadline = time.monotonic() + 3600
+          while required - qualified.keys():
+              for commit in sorted(required - qualified.keys()):
+                  runs = api(f"repos/{repository}/actions/runs?head_sha={commit}&status=success&per_page=100")
+                  for run in runs["workflow_runs"]:
+                      if (run["path"] != ".github/workflows/librewinforms-ci.yml"
+                              or run["head_sha"] != commit or run["conclusion"] != "success"):
+                          continue
+                      jobs = api(f"repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100")
+                      if (jobs["total_count"] == len(jobs["jobs"]) == 9
+                              and all(job["conclusion"] == "success" for job in jobs["jobs"])):
+                          qualified[commit] = {"run": run, "jobs": jobs}
+                          print(f"Qualified all nine Build jobs: {commit}, run {run['id']}", flush=True)
+                          break
+              if required - qualified.keys():
+                  if time.monotonic() >= deadline:
+                      raise SystemExit("Source or recovery workflow lacks a whole successful nine-job Build.")
+                  time.sleep(30)
+          receipt = pathlib.Path("artifacts/packages/Release/NonShipping/librewinforms-release-qualification.json")
+          receipt.write_text(json.dumps({"sourceCommit": source,
+                                        "workflowCommit": os.environ["WORKFLOW_COMMIT"],
+                                        "qualified": qualified}, indent=2) + "\n")
 
       - name: Upload preview packages
         uses: actions/upload-artifact@v4
@@ -187,11 +258,12 @@ jobs:
         run: dotnet nuget push artifacts/packages/Release/NonShipping/*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Create GitHub Release
-        if: ${{ startsWith(github.ref, 'refs/tags/librewinforms-v') }}
+        if: ${{ steps.release.outputs.tag != '' && (inputs.publish || startsWith(github.ref, 'refs/tags/librewinforms-v')) }}
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
+          gh release create "${RELEASE_TAG}" \
             artifacts/packages/Release/NonShipping/*.nupkg \
             artifacts/packages/Release/NonShipping/*.json \
             artifacts/packages/Release/NonShipping/*.tar.gz \

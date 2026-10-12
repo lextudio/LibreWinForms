@@ -139,6 +139,66 @@ class ReleaseNativeStagingTests(CanonicalNativeStagingTests):
         return "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
 
 
+class ReleaseRecoveryTests(unittest.TestCase):
+    def test_release_uses_the_qualified_linux_display_environment(self):
+        workflow = (ROOT / ".github/workflows/librewinforms-release.yml").read_text()
+        install = workflow.split("      - name: Install Linux display for SDK initialization\n", 1)[1].split("\n      - name:", 1)[0]
+        for dependency in ("xvfb", "libglfw3", "libvulkan1", "mesa-vulkan-drivers"):
+            self.assertIn(dependency, install)
+        for script in ("librewinforms-build-canonical-wfi.sh", "librewinforms-pack.sh",
+                       "librewinforms-package-smoke.sh"):
+            self.assertIn("xvfb-run -a ./eng/" + script, workflow)
+
+    def test_existing_tag_recovery_preserves_exact_source_and_version(self):
+        workflow = (ROOT / ".github/workflows/librewinforms-release.yml").read_text()
+        step = workflow.split("      - name: Resolve release version\n", 1)[1].split("\n      - name:", 1)[0]
+        script = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+        script = re.sub(r"\$\{\{ inputs\.[a-z_]+ \}\}", "", script)
+        with tempfile.TemporaryDirectory(prefix="forms-release-identity-") as temporary:
+            root = Path(temporary)
+
+            def git(*arguments):
+                return subprocess.run(["git", *arguments], cwd=root, check=True,
+                                      capture_output=True, text=True).stdout.strip()
+
+            git("init", "--quiet")
+            git("-c", "user.name=Release contract", "-c", "user.email=contract@example.invalid",
+                "commit", "--quiet", "--allow-empty", "-m", "original source")
+            source = git("rev-parse", "HEAD")
+            tag = "librewinforms-v0.1.0-preview.67"
+            git("tag", tag)
+            git("branch", "not-a-tag")
+            git("-c", "user.name=Release contract", "-c", "user.email=contract@example.invalid",
+                "commit", "--quiet", "--allow-empty", "-m", "different source")
+            replacement = git("rev-parse", "HEAD")
+            cases = [
+                ("tag push", source, "tag", tag, "", "", True),
+                ("exact recovery", source, "branch", "recipe", tag, "0.1.0-preview.67", True),
+                ("version mismatch", source, "branch", "recipe", tag, "0.1.0-preview.68", False),
+                ("wrong checkout", replacement, "branch", "recipe", tag, "0.1.0-preview.67", False),
+                ("missing tag", source, "branch", "recipe", "librewinforms-v0.1.0-preview.68", "", False),
+                ("branch ref", source, "branch", "recipe", "not-a-tag", "", False),
+                ("shell characters", source, "branch", "recipe", tag + ";touch injected", "", False),
+            ]
+            for name, commit, ref_type, ref_name, requested, version, success in cases:
+                with self.subTest(name=name):
+                    git("checkout", "--quiet", "--detach", commit)
+                    output = root / "output"
+                    output.write_text("")
+                    environment = dict(os.environ, GITHUB_REF_TYPE=ref_type, GITHUB_REF_NAME=ref_name,
+                                       REQUESTED_SOURCE_TAG=requested, REQUESTED_VERSION=version,
+                                       GITHUB_ENV=str(root / "environment"), GITHUB_OUTPUT=str(output))
+                    result = subprocess.run(["bash", "-c", script], cwd=root, env=environment,
+                                            capture_output=True, text=True)
+                    self.assertEqual(result.returncode == 0, success, result.stderr)
+                    self.assertEqual(git("rev-parse", "HEAD"), commit)
+                    self.assertEqual(git("rev-parse", "refs/tags/" + tag), source)
+                    self.assertFalse((root / "injected").exists())
+                    if success:
+                        self.assertIn("tag=" + tag + "\n", output.read_text())
+                        self.assertIn("bridge_ref=librewpf-v0.1.0-preview.67\n", output.read_text())
+
+
 class SourceFirstNativeStagingTests(unittest.TestCase):
     helper_commit = HELPER_COMMIT
 
