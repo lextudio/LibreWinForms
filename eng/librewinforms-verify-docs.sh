@@ -29,7 +29,7 @@ require_text README.md "default GitHub branch is \`librewinforms-progpu-port\`"
 require_text README.md "LibreWinForms.Sdk"
 require_text eng/librewinforms-package-list.sh '  LibreWinForms.ApplicationIsolation'
 require_text README.md '"msbuild-sdks": {'
-require_text README.md '"LibreWinForms.Sdk": "0.1.0-preview.67"'
+require_text README.md '"LibreWinForms.Sdk": "0.1.0-preview.68"'
 require_text README.md '<Project Sdk="LibreWinForms.Sdk">'
 require_text README.md 'preserve your existing `sdk` settings'
 reject_text README.md '<Project Sdk="LibreWinForms.Sdk/'
@@ -69,7 +69,7 @@ require_text docs/librewinforms-release.md "LibreWinForms.Sdk"
 require_text docs/librewinforms-release.md "LIBREWINFORMS_PROGPU_PACKAGE_VERSION"
 require_text docs/librewinforms-release.md "LIBREWINFORMS_CANONICAL_WFI_PACKAGE_SOURCE"
 require_text docs/librewinforms-release.md "LIBREWINFORMS_CANONICAL_WFI_COMMIT"
-require_text docs/librewinforms-release.md "0.1.0-preview.67"
+require_text docs/librewinforms-release.md "0.1.0-preview.68"
 require_text docs/librewinforms-release.md "gh release create --generate-notes"
 require_text docs/librewinforms-release.md "librewinforms-v<version>"
 require_text README.md "fails if a stale or unexpected current-version"
@@ -88,7 +88,7 @@ require_text src/LibreWinForms.Sdk/LibreWinForms.Sdk.csproj "<Description>SDK pa
 require_text src/LibreWinForms.Sdk/LibreWinForms.Sdk.csproj "<PackageTags>librewinforms;winforms;sdk;progpu;silk.net;cross-platform;source-built</PackageTags>"
 require_text src/LibreWinForms.Sdk/LibreWinForms.Sdk.csproj "<PackageReadmeFile>README.md</PackageReadmeFile>"
 require_text src/LibreWinForms.Sdk/Sdk/Sdk.props '<LibreWinFormsUseCanonicalRuntime Condition="'\''$(LibreWinFormsUseCanonicalRuntime)'\'' == '\'''\''">true</LibreWinFormsUseCanonicalRuntime>'
-require_text src/LibreWinForms.Sdk/Sdk/Sdk.props '>0.1.0-preview.67</LibreWinFormsProGpuPackageVersion>'
+require_text src/LibreWinForms.Sdk/Sdk/Sdk.props '>0.1.0-preview.68</LibreWinFormsProGpuPackageVersion>'
 require_text src/LibreWinForms.Sdk/targets/LibreWinForms.Sdk.targets 'LibreWinForms.Sdk is canonical-only'
 reject_text src/LibreWinForms.Sdk/targets/LibreWinForms.Sdk.targets 'LibreWinForms.Compatibility.System.Windows.Forms'
 reject_text src/LibreWinForms.Sdk/targets/LibreWinForms.Sdk.targets 'WindowsFormsHost.EnableWindowsFormsInterop'
@@ -151,7 +151,7 @@ require_text .github/workflows/librewinforms-ci.yml "./eng/librewinforms-build-c
 # Bridge packages retain their published version; the canonical source lane
 # qualifies the exact LibreWPF checkpoint containing the migrated projects.
 require_text .github/workflows/librewinforms-ci.yml "librewpf-v0.1.0-preview.65"
-require_text .github/workflows/librewinforms-ci.yml "LIBREWINFORMS_CANONICAL_WFI_REF: beb9a867a1764ac5a63430b89487a079bf8ae115"
+require_text .github/workflows/librewinforms-ci.yml "LIBREWINFORMS_CANONICAL_WFI_REF: b8bbd1423d45fc9219b0e56cf1ca8c69f3368d61"
 require_text .github/workflows/librewinforms-release.yml 'progpu_version="${version}"'
 require_text .github/workflows/librewinforms-release.yml 'canonical_wfi_ref="librewpf-v${bridge_version}"'
 require_text .github/workflows/librewinforms-ci.yml "LIBREWINFORMS_PROGPU_PACKAGE_VERSION"

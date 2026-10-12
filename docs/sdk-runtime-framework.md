@@ -15,7 +15,7 @@ or substitute a different runtime assembly set.
 The minimal C# application contract is:
 
 ```xml
-<Project Sdk="LibreWinForms.Sdk/0.1.0-preview.67">
+<Project Sdk="LibreWinForms.Sdk/0.1.0-preview.68">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
