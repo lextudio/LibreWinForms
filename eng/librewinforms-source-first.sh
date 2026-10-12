@@ -10,6 +10,8 @@ export DOTNET_ROLL_FORWARD_TO_PRERELEASE="${DOTNET_ROLL_FORWARD_TO_PRERELEASE:-1
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 configuration="${CONFIGURATION:-Release}"
 progpu_root="${repo_root}/external/ProGPU"
+export LibreWinFormsSourceRoot="${repo_root}/"
+drawing_tests="${repo_root}/src/ProGPU.Drawing/System.Drawing.Common.Tests/System.Drawing.Common.Tests.csproj"
 portable_net_current="net10.0"
 
 run_test_project() {
@@ -34,10 +36,12 @@ run_test_project() {
     --minimum-expected-tests "${minimum_tests}"
 }
 
-if [[ ! -f "${progpu_root}/src/System.Drawing.Common/System.Drawing.Common.csproj" ]]; then
+if [[ ! -f "${progpu_root}/src/ProGPU.Backend/ProGPU.Backend.csproj" ]]; then
   echo "The external/ProGPU submodule is not initialized. Run git submodule update --init --recursive." >&2
   exit 1
 fi
+
+python3 "${progpu_root}/eng/progpu-prepare-framework-sources.py"
 
 echo "Building canonical System.Windows.Forms source graph."
 "${repo_root}/eng/common/dotnet.sh" build \
@@ -238,7 +242,7 @@ echo "Verifying ProGPU System.Drawing API debt and focused quality gates."
   if [[ "${LIBREWINFORMS_DRAWING_TRACE:-0}" == "1" && "${configuration}" == "Release" ]]; then
     # The pinned wrapper runs the full unfiltered Release suite exactly once.
     # Additional method metadata is diagnostic admission, not an allocation sample.
-    python3 eng/progpu-test-system-drawing.py \
+    python3 eng/progpu-test-system-drawing.py --project "${drawing_tests}" \
       --output "${repo_root}/artifacts/system-drawing-quality" \
       --require-method System.Drawing.Common.Tests.MetafileParserTests \
       WarmedEnumerationDoesNotAllocatePerRecordPayloads
@@ -246,7 +250,7 @@ echo "Verifying ProGPU System.Drawing API debt and focused quality gates."
     if [[ "${LIBREWINFORMS_DRAWING_TRACE:-0}" == "1" ]]; then
       echo "Drawing trace disabled: the pinned collector supports Release; preserving ${configuration} tests."
     fi
-    dotnet test src/System.Drawing.Common.Tests/System.Drawing.Common.Tests.csproj \
+    dotnet test "${drawing_tests}" -p:ProGpuSourceRoot="${progpu_root}/" \
       --configuration "${configuration}" \
       --nologo
   fi

@@ -14,7 +14,7 @@
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />
     <None Remove="tests\**\*" />
-    <ProjectReference Include="$(LibreWinFormsProGpuSourceRoot)src\System.Drawing.Common\System.Drawing.Common.csproj" />
+    <ProjectReference Include="$(LibreWinFormsDrawingRoot)System.Drawing.Common\System.Drawing.Common.csproj" AdditionalProperties="ProGpuSourceRoot=$(LibreWinFormsProGpuSourceRoot)" />
   </ItemGroup>
 
 </Project>

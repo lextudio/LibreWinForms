@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <ProGpuSourceRoot Condition="'$(ProGpuSourceRoot)' == '' And '$(LibreWinFormsProGpuSourceRoot)' != ''">$(LibreWinFormsProGpuSourceRoot)</ProGpuSourceRoot>
+    <!-- A producer sparse checkout uses its containing ProGPU tree, without
+         initializing a recursive LibreWinForms -> ProGPU dependency. -->
+    <ProGpuSourceRoot Condition="'$(ProGpuSourceRoot)' == '' And Exists('$(MSBuildThisFileDirectory)../../../../eng/framework-sources.json') And Exists('$(MSBuildThisFileDirectory)../../../../src/ProGPU.Backend/ProGPU.Backend.csproj')">$(MSBuildThisFileDirectory)../../../../</ProGpuSourceRoot>
+    <ProGpuSourceRoot Condition="'$(ProGpuSourceRoot)' == ''">$(MSBuildThisFileDirectory)../../external/ProGPU/</ProGpuSourceRoot>
+    <ProGpuSourceRoot>$([MSBuild]::NormalizeDirectory('$(ProGpuSourceRoot)'))</ProGpuSourceRoot>
+    <DirectoryPackagesPropsPath>$(ProGpuSourceRoot)Directory.Packages.props</DirectoryPackagesPropsPath>
+    <RepositoryUrl>https://github.com/wieslawsoltes/LibreWinForms</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/wieslawsoltes/LibreWinForms</PackageProjectUrl>
+  </PropertyGroup>
+  <Import Project="$(ProGpuSourceRoot)Directory.Build.props" />
+  <ItemGroup>
+    <None Remove="$(ProGpuSourceRoot)README.md" />
+    <None Include="$(MSBuildThisFileDirectory)../../README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+</Project>

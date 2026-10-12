@@ -4,8 +4,10 @@
           Condition="'$(LibreWinFormsReferenceMode)' == 'Project'">
     <Error Condition="'$(LibreWinFormsProGpuSourceRoot)' == ''"
            Text="LibreWinFormsReferenceMode=Project requires the ProGPU source tree. Initialize external/ProGPU or set LibreWinFormsProGpuSourceRoot to a ProGPU checkout." />
-    <Error Condition="'$(LibreWinFormsProGpuSourceRoot)' != '' And !Exists('$(LibreWinFormsProGpuSourceRoot)src\System.Drawing.Common\System.Drawing.Common.csproj')"
-           Text="LibreWinFormsProGpuSourceRoot '$(LibreWinFormsProGpuSourceRoot)' does not contain src/System.Drawing.Common/System.Drawing.Common.csproj." />
+    <Error Condition="'$(LibreWinFormsProGpuSourceRoot)' != '' And !Exists('$(LibreWinFormsProGpuSourceRoot)src\ProGPU.Backend\ProGPU.Backend.csproj')"
+           Text="LibreWinFormsProGpuSourceRoot '$(LibreWinFormsProGpuSourceRoot)' does not contain src/ProGPU.Backend/ProGPU.Backend.csproj." />
+    <Error Condition="!Exists('$(LibreWinFormsDrawingRoot)System.Drawing.Common\System.Drawing.Common.csproj')"
+           Text="The repository-owned portable Drawing project is missing from $(LibreWinFormsDrawingRoot)." />
   </Target>
 
   <!-- System.Private.Windows.GdiPlus is retained as the explicit Win32 HDC
@@ -19,8 +21,8 @@
           BeforeTargets="CoreCompile"
           Condition="'$(LibreWinFormsUseProGpuSystemDrawing)' == 'true' And ('$(MSBuildProjectName)' == 'System.Windows.Forms' Or '$(MSBuildProjectName)' == 'System.Windows.Forms.Primitives' Or '$(MSBuildProjectName)' == 'System.Windows.Forms.Design' Or '$(MSBuildProjectFullPath)' == '$(LibreWinFormsSdkConsumerProject)')">
     <ItemGroup>
-      <_LibreWinFormsProGpuSystemDrawing Include="$(LibreWinFormsProGpuSourceRoot)src\System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll"
-          Condition="Exists('$(LibreWinFormsProGpuSourceRoot)src\System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll')" />
+      <_LibreWinFormsProGpuSystemDrawing Include="$(LibreWinFormsDrawingRoot)System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll"
+          Condition="Exists('$(LibreWinFormsDrawingRoot)System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll')" />
       <_LibreWinFormsExistingProGpuSystemDrawingCopy Include="@(ReferenceCopyLocalPaths)"
           Condition="'%(ReferenceCopyLocalPaths.Filename)' == 'System.Drawing.Common' And $([System.String]::Copy('%(ReferenceCopyLocalPaths.FusionName)').Contains('PublicKeyToken=c29c9752855ee183'))" />
       <_LibreWinFormsExistingProGpuSystemDrawingReference Include="@(ReferencePath)"
@@ -50,7 +52,7 @@
          output is the selected runtime payload, so copy that exact file before
          validating the output. Package mode keeps the normal NuGet copy-local
          behavior. -->
-    <Copy SourceFiles="$(LibreWinFormsProGpuSourceRoot)src\System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll"
+    <Copy SourceFiles="$(LibreWinFormsDrawingRoot)System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll"
           DestinationFiles="$(TargetDir)System.Drawing.Common.dll"
           SkipUnchangedFiles="false"
           Condition="'$(LibreWinFormsReferenceMode)' == 'Project'" />
@@ -61,7 +63,7 @@
     </GetAssemblyIdentity>
     <Error Condition="'%(_LibreWinFormsOutputSystemDrawingIdentity.PublicKeyToken)' != 'c29c9752855ee183'"
            Text="The source-first output contains System.Drawing.Common public key token '%(_LibreWinFormsOutputSystemDrawingIdentity.PublicKeyToken)' instead of the ProGPU token c29c9752855ee183." />
-    <GetFileHash Files="$(LibreWinFormsProGpuSourceRoot)src\System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll"
+    <GetFileHash Files="$(LibreWinFormsDrawingRoot)System.Drawing.Common\bin\$(Configuration)\net10.0\System.Drawing.Common.dll"
                  Condition="'$(LibreWinFormsReferenceMode)' == 'Project'">
       <Output TaskParameter="Items" ItemName="_LibreWinFormsSourceSystemDrawingHash" />
     </GetFileHash>
