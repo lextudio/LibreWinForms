@@ -52,7 +52,7 @@ OBSERVATION_TARGETS = """<Project>
   <Target Name="FrameworkContractPolicy"
           DependsOnTargets="_LibreWinFormsValidateCanonicalSdkConfiguration">
     <WriteLinesToFile File="$(MSBuildProjectDirectory)/configuration-policy.txt"
-                      Lines="forms=$(LibreWinFormsUseSystemWindowsForms);bootstrap=$(LibreWinFormsGenerateApplicationBootstrap);framework=$(TargetFramework);payload=$(LibreWinFormsPackagedRuntimeTargetFramework)"
+                      Lines="forms=$(LibreWinFormsUseSystemWindowsForms);bootstrap=$(LibreWinFormsGenerateApplicationBootstrap);framework=$(TargetFramework);payload=$(LibreWinFormsPackagedRuntimeTargetFramework);windowsDesktop=$(UseWindowsForms)"
                       Overwrite="true" />
   </Target>
   <Target Name="FrameworkContractCompilerInputs" BeforeTargets="CoreCompile"
@@ -206,7 +206,8 @@ def copy_text(source, destination):
 
 
 def build_consumer(args, scratch, environment, evidence, framework, name, output_type,
-                   properties=None, forms=True, bootstrap=True, configuration=True, caller=False):
+                   properties=None, forms=True, bootstrap=True, configuration=True, caller=False,
+                   global_properties=None):
     case = scratch / (framework + "-" + name)
     source = APP_SOURCE if forms else LIBRARY if output_type == "Library" else EMPTY_APP
     project = write_project(case, args.sdk_version, framework, output_type, properties, source)
@@ -219,6 +220,7 @@ def build_consumer(args, scratch, environment, evidence, framework, name, output
     command = [args.dotnet, "build", str(project), "--configuration", args.configuration, "--nologo",
                "--disable-build-servers", "-p:EmitCompilerGeneratedFiles=true",
                "-p:UseAppHost=false", "-p:ErrorLog=" + str(case / "diagnostics.sarif")]
+    command.extend(f"-property:{key}={value}" for key, value in (global_properties or {}).items())
     exit_code = run_command(command, scratch, environment, record / "build.log")
     require(exit_code == 0, f"Consumer failed: {case.name}; see {record / 'build.log'}")
     diagnostics = json.loads((case / "diagnostics.sarif").read_text(encoding="utf-8"))
@@ -250,6 +252,8 @@ def build_consumer(args, scratch, environment, evidence, framework, name, output
                   (case / "configuration-policy.txt").read_text(encoding="utf-8-sig").splitlines())
     require(policy["forms"] == str(forms).lower() and policy["bootstrap"] == str(bootstrap).lower(),
             f"{case.name}: resolved SDK policy differs: {policy!r}")
+    require(policy["windowsDesktop"] == "false",
+            f"{case.name}: portable consumer retained the WindowsDesktop flag")
     references = [Path(line) for line in
                   (case / "compiler-references.txt").read_text(encoding="utf-8-sig").splitlines()]
     if forms:
@@ -477,10 +481,25 @@ def main():
             output_type = "WinExe" if tfm == "net10.0" else "Exe"
             results.append(build_consumer(args, scratch, environment, evidence, tfm,
                                            "one-line-" + output_type.lower(), output_type))
-        # Keep the compiler matrix bounded at seven builds for a net10 payload.
+        # Keep the compiler matrix bounded at ten builds for a net10 payload.
         # Both consumer TFMs compile; policy opt-outs need not rebuild every TFM.
         results.append(build_consumer(args, scratch, environment, evidence, framework,
                                        "explicit-forms-template", "WinExe", {"UseWindowsForms": "true"}))
+        # Global properties can be supplied by an IDE or a parent MSBuild task.
+        # They win over the project body until the SDK captures that request;
+        # portable selection must then clear the WindowsDesktop flag itself.
+        results.append(build_consumer(args, scratch, environment, evidence, framework,
+                                       "global-forms-true", "WinExe", {"UseWindowsForms": "false"},
+                                       global_properties={"UseWindowsForms": "true"}))
+        results.append(build_consumer(args, scratch, environment, evidence, framework,
+                                       "global-forms-false", "WinExe", {"UseWindowsForms": "true"},
+                                       forms=False, bootstrap=False, configuration=False,
+                                       global_properties={"UseWindowsForms": "false"}))
+        results.append(build_consumer(args, scratch, environment, evidence, framework,
+                                       "global-forms-sdk-opt-out", "WinExe",
+                                       {"LibreWinFormsUseSystemWindowsForms": "false"},
+                                       forms=False, bootstrap=False, configuration=False,
+                                       global_properties={"UseWindowsForms": "true"}))
         for name, properties in (
             ("use-windows-forms-false", {"UseWindowsForms": "false"}),
             ("sdk-forms-false", {"LibreWinFormsUseSystemWindowsForms": "false"})):
