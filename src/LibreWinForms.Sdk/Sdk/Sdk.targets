@@ -1,4 +1,7 @@
-<Project>
+<Project TreatAsLocalProperty="UseWindowsForms">
+  <!-- Capture the caller's choice below before clearing the WindowsDesktop
+       flag. IDE/command-line global properties otherwise prevent this SDK from
+       selecting its portable framework, even though the Forms request is kept. -->
   <PropertyGroup>
     <LibreWinFormsUseSystemWindowsForms Condition="'$(LibreWinFormsUseSystemWindowsForms)' == '' And ('$(UseWindowsForms)' == 'true' Or ('$(UseWindowsForms)' == '' And '$(LibreWinFormsRequestedUseWindowsForms)' == 'true'))">true</LibreWinFormsUseSystemWindowsForms>
     <!-- The one-line C# application SDK owns portable Forms initialization by

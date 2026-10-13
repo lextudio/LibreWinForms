@@ -15,7 +15,7 @@ or substitute a different runtime assembly set.
 The minimal C# application contract is:
 
 ```xml
-<Project Sdk="LibreWinForms.Sdk/0.1.0-preview.68">
+<Project Sdk="LibreWinForms.Sdk/0.1.0-preview.69">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -65,6 +65,31 @@ separate `GenerateApplicationBootstrap`/`GenerateApplicationConfiguration`
 opt-outs are unchanged. Canonical WFI remains the separately qualified package
 path; this correction does not replace it with a compatibility shim or add WPF
 to an ordinary Forms application.
+
+### Global Forms requests
+
+An IDE, command line, or parent MSBuild task can supply `UseWindowsForms` as a
+global property. In preview.67 that prevented the SDK's later assignment to
+`false`, so Microsoft's original WindowsDesktop check rejected a portable
+`net10.0` project with `NETSDK1136`. Supplying the property only in the project
+body did not reproduce this failure in the published package. This identifies
+one reproducible cause of [#166](https://github.com/wieslawsoltes/LibreWinForms/issues/166);
+the reporter's Visual Studio invocation still needs confirmation.
+
+`Sdk.targets` now marks only `UseWindowsForms` as local at the point where the
+SDK consumes the request. Its incoming true/false value still selects portable
+Forms and initialization, with normal global-property precedence over the
+earlier project body. The SDK then clears the WindowsDesktop flag before the
+Microsoft targets import. `LibreWinFormsUseSystemWindowsForms=false` remains an
+opt-out; other global properties, supported TFMs and package identities retain
+their existing rules. See Microsoft's
+[TreatAsLocalProperty contract](https://learn.microsoft.com/en-us/visualstudio/msbuild/project-element-msbuild).
+
+The package framework harness adds actual compiler cases for global true,
+global false, and an explicit portable-Forms opt-out under global true. Each
+checks generated initialization, original analyzer diagnostics and final
+compiler references as well as the cleared WindowsDesktop flag. Local source
+evaluation alone does not qualify the final package or the reported IDE build.
 
 ## Authored controls; execution deferred
 
