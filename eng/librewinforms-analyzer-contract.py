@@ -296,6 +296,14 @@ class CompilerProcesses:
 
     @staticmethod
     def kill(process):
+        if os.name != "posix":
+            # No process groups or SIGKILL here: end the process itself. A timeout or cancellation
+            # is already a failed run, so leaving its children to finish is acceptable.
+            try:
+                process.kill()
+            except OSError:
+                pass
+            return
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:

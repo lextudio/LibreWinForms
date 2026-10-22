@@ -330,7 +330,8 @@ System.Console.WriteLine("package-consumer-passed");
         self.run_command("publish", project.name, "--no-restore", "-c", "IdentityContract", "-m:1", "-v:q",
                          "-o", self.root / "foreign-publish", "-p:ForeignPublish=true", expected="LWFDRAW001")
         self.assertFalse((self.root / "foreign-publish/System.Drawing.Common.dll").exists())
-        architecture = {"x86_64": "x64", "AMD64": "x64", "arm64": "arm64", "aarch64": "arm64"}[platform.machine()]
+        # platform.machine() reports "ARM64" and "AMD64" in capitals on Windows, lower case elsewhere.
+        architecture = {"x86_64": "x64", "amd64": "x64", "arm64": "arm64", "aarch64": "arm64"}[platform.machine().lower()]
         system = {"Darwin": "osx", "Linux": "linux", "Windows": "win"}[platform.system()]
         rid = f"{system}-{architecture}"
         single = ["publish", project.name, "-c", "SingleFileContract", "-m:1", "-v:q", "-r", rid,
