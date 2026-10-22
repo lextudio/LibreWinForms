@@ -5,6 +5,7 @@ import ast
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
+import os
 from pathlib import Path
 import signal
 import subprocess
@@ -52,6 +53,11 @@ class OwnedProcess:
         return -9
 
 
+# Overlapping the reference modes cancels a sibling through owned POSIX process groups. Windows has
+# none, so the contract script runs the modes serially there and these controls do not apply.
+posix_only = unittest.skipUnless(os.name == "posix", "parallel mode cancellation needs POSIX process groups")
+
+
 class AnalyzerSchedulingTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="analyzer-scheduling-test.")
@@ -60,6 +66,7 @@ class AnalyzerSchedulingTests(unittest.TestCase):
         self.args = SimpleNamespace(parallel_modes=True, reference_mode="Both",
                                     project_packages=self.root / "sdk-packages", producer_snapshot=self.root / "producer")
 
+    @posix_only
     def test_parallel_modes_overlap_but_each_complete_case_list_stays_serial(self):
         barrier = threading.Barrier(2)
         lock = threading.Lock()
@@ -134,6 +141,7 @@ class AnalyzerSchedulingTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "POSIX process groups"):
                 CONTRACT.validate_parallel_modes(self.args)
 
+    @posix_only
     def test_failure_or_interrupt_cancels_the_sibling_without_losing_the_original_error(self):
         for failure in (AssertionError("original package failure"), KeyboardInterrupt(), SystemExit(143)):
             with self.subTest(failure=type(failure).__name__):
@@ -176,6 +184,7 @@ class AnalyzerSchedulingTests(unittest.TestCase):
                 controller.run(["not started"], cwd=self.root, env={}, output=None, timeout=300)
         create.assert_not_called()
 
+    @posix_only
     def test_timeout_reaps_the_owned_group_without_extending_the_case_deadline(self):
         for timeout in (300, 60):
             with self.subTest(timeout=timeout):

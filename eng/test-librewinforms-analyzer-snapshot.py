@@ -89,14 +89,22 @@ class ProducerSnapshotTests(unittest.TestCase):
                 shutil.copytree(self.snapshot, mutant)
                 target = mutant / next(iter(self.files))
                 if fault == "missing":
+                    # Windows refuses to delete a read-only file, unlike POSIX where the
+                    # directory's permissions decide.
+                    target.chmod(0o644)
                     target.unlink()
                 elif fault == "extra":
                     extra = mutant / "unexpected.dll"
                     extra.write_bytes(b"extra")
                     extra.chmod(0o444)
                 elif fault == "symlink":
+                    target.chmod(0o644)
                     target.unlink()
-                    target.symlink_to(self.snapshot / next(iter(self.files)))
+                    try:
+                        target.symlink_to(self.snapshot / next(iter(self.files)))
+                    except OSError:
+                        # Creating a symlink needs a privilege a plain Windows account lacks.
+                        self.skipTest("symlinks are not available to this account")
                 elif fault == "writable":
                     target.chmod(0o644)
                 else:

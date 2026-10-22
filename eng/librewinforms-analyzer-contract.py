@@ -120,10 +120,11 @@ def verify_snapshot(repo, package, configuration, snapshot, expected_digest, pro
     expected = producer_files(repo, configuration)
     files = {entry: snapshot / entry for entry in expected}
     inventory = {"manifest.json", *expected}
-    directories = {str(parent) for entry in inventory for parent in Path(entry).parents if str(parent) != "."}
+    directories = {parent.as_posix() for entry in inventory for parent in Path(entry).parents if parent.as_posix() != "."}
     actual = set()
     for path in snapshot.rglob("*"):
-        relative = str(path.relative_to(snapshot))
+        # as_posix: the inventory keys are archive-style entries, which always use "/".
+        relative = path.relative_to(snapshot).as_posix()
         if path.is_symlink():
             raise AssertionError(f"Snapshot contains a symlink: {relative}")
         if path.is_dir():
@@ -816,6 +817,12 @@ def main():
         parser.error("Producer capture cannot reuse a consumer cache")
     if args.capture_producer and args.parallel_modes:
         parser.error("Producer capture cannot run consumer modes")
+    if args.parallel_modes and os.name != "posix":
+        # Overlapping the modes needs owned POSIX process groups to cancel the sibling safely, and
+        # Windows has none. Run Project then Package one after the other: the same cases and the
+        # same comparisons, only without the overlap that saves wall-clock time.
+        print("Parallel modes need POSIX process groups; running the reference modes serially.", flush=True)
+        args.parallel_modes = False
     args.repo_root = args.repo_root.resolve()
     args.package_source = args.package_source.resolve()
     evidence = args.evidence_directory.resolve()
