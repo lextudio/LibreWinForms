@@ -151,7 +151,7 @@ class PopupDesktopContracts(unittest.TestCase):
                 with zipfile.ZipFile(root / f"{name}.1.2.3.nupkg", "w") as archive:
                     archive.writestr(f"{name}.nuspec", f"<package><metadata><id>{name}</id><version>1.2.3</version></metadata></package>")
             staged = root / "staged"
-            receipt = PREPARE.prepare(staged, root, "1.2.3", "1.2.3", "1.2.3", "11.0.100-preview.5.26302.115")
+            receipt = PREPARE.prepare(staged, root, "1.2.3", "1.2.3", "1.2.3", "11.0.100-rc.2.26504.105")
             self.assertFalse(receipt["qualified"])
             self.assertFalse(receipt["nativeGeometry"]["enabled"])
             self.assertIsNone(receipt["nativeGeometry"]["sourceSha256"])

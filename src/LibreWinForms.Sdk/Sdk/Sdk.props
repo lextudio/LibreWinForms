@@ -22,10 +22,10 @@
     <LibreWinFormsCanonicalPackageVersion Condition="'$(LibreWinFormsCanonicalPackageVersion)' == ''">$(LibreWinFormsVersion)</LibreWinFormsCanonicalPackageVersion>
     <LibreWinFormsProGpuBackendPackageVersion Condition="'$(LibreWinFormsProGpuBackendPackageVersion)' == '' And '$(LibreWinFormsPackagedProGpuBackendVersion)' != ''">$(LibreWinFormsPackagedProGpuBackendVersion)</LibreWinFormsProGpuBackendPackageVersion>
     <LibreWinFormsProGpuBackendPackageVersion Condition="'$(LibreWinFormsProGpuBackendPackageVersion)' == ''">$(LibreWinFormsVersion)</LibreWinFormsProGpuBackendPackageVersion>
-    <LibreWinFormsSystemConfigurationConfigurationManagerVersion Condition="'$(LibreWinFormsSystemConfigurationConfigurationManagerVersion)' == ''">11.0.0-preview.5.26302.115</LibreWinFormsSystemConfigurationConfigurationManagerVersion>
-    <LibreWinFormsSystemFormatsNrbfVersion Condition="'$(LibreWinFormsSystemFormatsNrbfVersion)' == ''">11.0.0-preview.5.26302.115</LibreWinFormsSystemFormatsNrbfVersion>
-    <LibreWinFormsSystemIOPackagingVersion Condition="'$(LibreWinFormsSystemIOPackagingVersion)' == ''">11.0.0-preview.5.26302.115</LibreWinFormsSystemIOPackagingVersion>
-    <LibreWinFormsSystemWindowsExtensionsVersion Condition="'$(LibreWinFormsSystemWindowsExtensionsVersion)' == ''">11.0.0-preview.5.26302.115</LibreWinFormsSystemWindowsExtensionsVersion>
+    <LibreWinFormsSystemConfigurationConfigurationManagerVersion Condition="'$(LibreWinFormsSystemConfigurationConfigurationManagerVersion)' == ''">11.0.0-rc.2.26504.105</LibreWinFormsSystemConfigurationConfigurationManagerVersion>
+    <LibreWinFormsSystemFormatsNrbfVersion Condition="'$(LibreWinFormsSystemFormatsNrbfVersion)' == ''">11.0.0-rc.2.26504.105</LibreWinFormsSystemFormatsNrbfVersion>
+    <LibreWinFormsSystemIOPackagingVersion Condition="'$(LibreWinFormsSystemIOPackagingVersion)' == ''">11.0.0-rc.2.26504.105</LibreWinFormsSystemIOPackagingVersion>
+    <LibreWinFormsSystemWindowsExtensionsVersion Condition="'$(LibreWinFormsSystemWindowsExtensionsVersion)' == ''">11.0.0-rc.2.26504.105</LibreWinFormsSystemWindowsExtensionsVersion>
     <LibreWinFormsReferenceMode Condition="'$(LibreWinFormsReferenceMode)' == ''">Package</LibreWinFormsReferenceMode>
     <CopyLocalLockFileAssemblies Condition="'$(LibreWinFormsUsePortableFrameworkReferences)' == 'true' And '$(CopyLocalLockFileAssemblies)' == ''">true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
