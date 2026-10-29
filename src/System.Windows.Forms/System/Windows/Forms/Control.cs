@@ -11787,6 +11787,17 @@ public unsafe partial class Control :
         }
     }
 
+    /// <summary>
+    /// Paints this control and its descendants into <paramref name="graphics"/> with the control's own
+    /// origin at the graphics origin. Used by a host that draws a control tree into another UI
+    /// framework's drawing surface (the WPF WindowsFormsHost).
+    /// </summary>
+    internal void PaintPortableTreeInto(Graphics graphics, Rectangle clip)
+    {
+        ArgumentNullException.ThrowIfNull(graphics);
+        PaintPortableControlTree(graphics, Point.Empty, clip);
+    }
+
     private void PaintPortableControlTree(Graphics graphics, Point absoluteLocation, Rectangle surfaceClip)
     {
         if (!Visible || _width <= 0 || _height <= 0)
